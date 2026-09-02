@@ -2,15 +2,21 @@
 
 
 
-Repository này tổng hợp các bài tập và project em thực hiện trong quá trình
+Repository tổng hợp các bài tập và project em thực hiện trong quá trình
 
 thực tập vị trí \*\*Backend Intern tại SmartOSC\*\*.
 
 
 
-Các nội dung được thực hiện theo lộ trình từ Java Core đến phát triển
+Nội dung thực hành được triển khai theo lộ trình từ kiến thức Java nền tảng,
 
-Backend với Spring Boot.
+lập trình hướng đối tượng, Collection, xử lý dữ liệu, cơ sở dữ liệu đến
+
+phát triển Backend với Spring Boot.
+
+
+
+\---
 
 
 
@@ -18,23 +24,31 @@ Backend với Spring Boot.
 
 
 
-Các bài tập thực hành những kiến thức nền tảng của Java:
+Các bài tập trong giai đoạn đầu tập trung vào việc củng cố kiến thức nền tảng
+
+của Java, bao gồm:
 
 
 
 \- Biến, kiểu dữ liệu và toán tử
 
+\- Cấu trúc điều kiện và vòng lặp
+
 \- Mảng và String
 
 \- Class và Object
 
-\- Encapsulation, Inheritance, Polymorphism
+\- Encapsulation
+
+\- Inheritance
+
+\- Polymorphism
 
 \- Abstract Class và Interface
 
 \- Exception Handling
 
-\- Collection Framework
+\- String Pool
 
 \- Lambda Expression
 
@@ -42,37 +56,87 @@ Các bài tập thực hành những kiến thức nền tảng của Java:
 
 \- Multithreading
 
-
-
-\## 2. Java Practice
-
-
-
-Các bài tập nhỏ được thực hiện trong quá trình học và luyện tập Java,
-
-bao gồm xử lý dữ liệu, Collection, String, JSON và các bài tập
-
-lập trình hướng đối tượng.
+\- Thread và Runnable
 
 
 
-\## 3. Maven, Database và JSON
+Các bài tập nhỏ được lưu trong các project thực hành theo từng chủ đề và
+
+từng giai đoạn học tập.
 
 
 
-Thực hành:
+\---
 
 
 
-\- Maven
+\## 2. Collection và xử lý dữ liệu
+
+
+
+Thực hành sử dụng các cấu trúc dữ liệu và API phổ biến trong Java:
+
+
+
+\- List
+
+\- Set
+
+\- Map
+
+\- Collection Framework
+
+\- Lambda Expression
+
+\- Stream API
+
+\- Xử lý và biến đổi dữ liệu
 
 \- JSON
 
+\- File I/O
+
+
+
+Thông qua các bài tập này, em làm quen với cách lựa chọn cấu trúc dữ liệu
+
+phù hợp và xử lý dữ liệu bằng các API có sẵn của Java.
+
+
+
+\---
+
+
+
+\## 3. Maven, Database và Docker
+
+
+
+Trong giai đoạn tiếp theo, các nội dung được thực hành gồm:
+
+
+
+\- Maven và quản lý dependency
+
+\- Cấu trúc project Maven
+
 \- MySQL
 
-\- JDBC
+\- SQL
 
-\- Xử lý và lưu trữ dữ liệu
+\- Kết nối và thao tác với cơ sở dữ liệu
+
+\- Docker cơ bản
+
+
+
+Đây là bước chuẩn bị trước khi chuyển sang xây dựng các ứng dụng Backend
+
+với Spring Boot.
+
+
+
+\---
 
 
 
@@ -80,7 +144,13 @@ Thực hành:
 
 
 
-Project Spring Boot được xây dựng nhằm thực hành các kiến thức Backend cơ bản:
+`Student Management` là project Spring Boot được sử dụng để thực hành
+
+các thành phần cơ bản của một ứng dụng Backend.
+
+
+
+Các nội dung chính:
 
 
 
@@ -92,7 +162,7 @@ Project Spring Boot được xây dựng nhằm thực hành các kiến thức 
 
 \- MySQL
 
-\- Entity Relationship
+\- Entity và quan hệ giữa các Entity
 
 \- DTO
 
@@ -104,11 +174,21 @@ Project Spring Boot được xây dựng nhằm thực hành các kiến thức 
 
 
 
+Project giúp em làm quen với cách tổ chức source code theo nhiều layer và
+
+luồng xử lý request trong ứng dụng Spring Boot.
+
+
+
+\---
+
+
+
 \## 5. Authentication và Role-Based Access Control
 
 
 
-Project thực hành về xác thực và phân quyền người dùng:
+Project thực hành Authentication và phân quyền được xây dựng nhằm tìm hiểu:
 
 
 
@@ -116,13 +196,13 @@ Project thực hành về xác thực và phân quyền người dùng:
 
 \- Role
 
-\- User Role
+\- User - Role Relationship
 
 \- Authentication
 
 \- Authorization
 
-\- Role-Based Access Control
+\- Role-Based Access Control (RBAC)
 
 \- Spring Security
 
@@ -130,27 +210,43 @@ Project thực hành về xác thực và phân quyền người dùng:
 
 
 
+Nội dung này được sử dụng làm nền tảng cho việc triển khai Authentication
+
+và Authorization trong project Device Management.
+
+
+
+\---
+
+
+
 \## 6. Device Management
 
 
 
-Đây là project thực hành trọng tâm trong kỳ thực tập.
+`Device Management` là \*\*project thực hành trọng tâm trong kỳ thực tập\*\*.
 
 
 
-Project được phát triển từ các yêu cầu quản lý thiết bị cơ bản và tiếp tục
+Project ban đầu được xây dựng từ các yêu cầu quản lý thiết bị cơ bản,
 
-được mở rộng nhằm thực hành thêm các nội dung Backend với Spring Boot.
+sau đó tiếp tục được mở rộng nhằm thực hành thêm các kiến thức Backend
+
+và xử lý business logic với Spring Boot.
 
 
 
-Các chức năng và nội dung chính:
+\### Các chức năng và nội dung chính
 
 
 
 \- Authentication và Role-Based Access Control
 
+\- User và Role Management
+
 \- Device Management
+
+\- Device Lifecycle Management
 
 \- Device Assignment
 
@@ -160,17 +256,23 @@ Các chức năng và nội dung chính:
 
 \- Repair Management
 
-\- Device Lifecycle Management
-
 \- Scheduler / Cronjob
+
+\- Overdue Assignment Processing
 
 \- Email Notification với JavaMailSender
 
-\- Search / Filter / Pagination
+\- Search
+
+\- Filter
+
+\- Pagination
 
 \- Dashboard
 
-\- Validation và Exception Handling
+\- Validation
+
+\- Global Exception Handling
 
 \- DTO và Mapper
 
@@ -180,7 +282,47 @@ Các chức năng và nội dung chính:
 
 
 
+\### Một số công nghệ được sử dụng
+
+
+
+\- Spring Boot
+
+\- Spring Data JPA
+
+\- Spring Security
+
+\- MySQL
+
+\- JWT
+
+\- JavaMailSender
+
+\- Spring Scheduler
+
+\- Swagger / OpenAPI
+
+\- JUnit
+
+
+
+Thông qua project này, em có cơ hội kết hợp các kiến thức đã học ở những
+
+giai đoạn trước và tiếp tục mở rộng project với nhiều chức năng và
+
+business rule hơn.
+
+
+
+\---
+
+
+
 \## Technologies
+
+
+
+Các công nghệ và công cụ chính được sử dụng trong quá trình thực tập:
 
 
 
@@ -192,9 +334,9 @@ Các chức năng và nội dung chính:
 
 \- Spring Security
 
-\- MySQL
-
 \- Maven
+
+\- MySQL
 
 \- Docker
 
@@ -206,9 +348,25 @@ Các chức năng và nội dung chính:
 
 \- JUnit
 
+\- Git
+
+\- GitHub
+
+\- IntelliJ IDEA
+
+
+
+\---
+
 
 
 \## Repository Structure
+
+
+
+Repository bao gồm các bài tập nhỏ và các project được thực hiện trong
+
+từng giai đoạn học tập.
 
 
 
@@ -216,11 +374,127 @@ Các chức năng và nội dung chính:
 
 IdeaProjects/
 
-├── Java practice projects
+│
 
-├── Student Management
+├── Java Core \& OOP Practice
 
-├── Authentication \& RBAC
+├── Collection / Stream / Multithreading Practice
 
-└── Device Management
+├── JSON \& Data Processing Practice
+
+├── Maven \& Database Practice
+
+│
+
+├── student-management
+
+│
+
+├── ex-rbac-complete
+
+│
+
+└── device
+
+```
+
+
+
+Một số thư mục bài tập được giữ theo tên project ban đầu trong quá trình
+
+thực hành.
+
+
+
+\---
+
+
+
+\## Security
+
+
+
+Các thông tin nhạy cảm không được lưu trực tiếp trong source code, bao gồm:
+
+
+
+\- Database password
+
+\- Email application password
+
+\- JWT signing key
+
+\- Các thông tin xác thực khác
+
+
+
+Những giá trị này được cung cấp cho ứng dụng thông qua
+
+\*\*Environment Variables\*\*.
+
+
+
+Ví dụ:
+
+
+
+```yaml
+
+spring:
+
+&#x20; datasource:
+
+&#x20;   username: ${DB\_USERNAME}
+
+&#x20;   password: ${DB\_PASSWORD}
+
+
+
+&#x20; mail:
+
+&#x20;   username: ${MAIL\_USERNAME}
+
+&#x20;   password: ${MAIL\_PASSWORD}
+
+
+
+jwt:
+
+&#x20; signer-key: ${JWT\_SIGNER\_KEY}
+
+```
+
+
+
+\---
+
+
+
+\## Internship Information
+
+
+
+\- \*\*Company:\*\* SmartOSC
+
+\- \*\*Position:\*\* Backend Intern
+
+\- \*\*Main stack:\*\* Java / Spring Boot
+
+\- \*\*Main practice project:\*\* Device Management
+
+
+
+\---
+
+
+
+\## Purpose
+
+
+
+Repository được sử dụng để lưu trữ và tổng hợp mã nguồn các bài tập,
+
+project thực hành trong quá trình thực tập, đồng thời làm tài liệu tham khảo
+
+cho báo cáo tổng kết thực tập.
 
