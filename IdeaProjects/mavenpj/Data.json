@@ -1,0 +1,20 @@
+[
+  {
+    "fullName": "Nguyen Van An",
+    "age": 20,
+    "gender": "Male",
+    "hometown": "Ha Noi"
+  },
+  {
+    "fullName": "Tran Thi Huyen",
+    "age": 35,
+    "gender": "Female",
+    "hometown": "Da Nang"
+  },
+  {
+    "fullName": "Le Van Chien",
+    "age": 17,
+    "gender": "Male",
+    "hometown": "Hai Phong"
+  }
+]

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "MLP4005",
+    "schoolName": "VNU",
+    "name": "Math",
+    "teacher": {
+      "id": "teacher1",
+      "name": "PMQ",
+      "homeTown": "Ha Noi",
+      "email": "pmq@vnu.edu.vn"
+    },
+    "students": [
+      {
+        "id": "11",
+        "name": "Quang",
+        "homeTown": "Ha Noi",
+        "email": "phiminhquang2@smartosc.com"
+      },
+      {
+        "id": "12",
+        "name": "Quang",
+        "homeTown": "Ha Tay",
+        "email": "phiminhquang3@gmail.com"
+      }
+    ]
+  }
+]
