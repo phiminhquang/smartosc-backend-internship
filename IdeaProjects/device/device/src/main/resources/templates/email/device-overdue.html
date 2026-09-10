@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Device Overdue</title>
+</head>
+<body>
+<h2>Thông báo thiết bị quá hạn</h2>
+
+<p>Xin chào <strong th:text="${userName}">User</strong>,</p>
+
+<p>
+    Thiết bị <strong th:text="${deviceName}">Device</strong>
+    đã quá hạn trả.
+</p>
+
+<p>Serial: <span th:text="${serialNumber}">Serial</span></p>
+<p>Hạn trả: <strong th:text="${expectedReturnAt}">Date</strong></p>
+
+<p>Vui lòng liên hệ bộ phận IT để hoàn trả thiết bị.</p>
+</body>
+</html>

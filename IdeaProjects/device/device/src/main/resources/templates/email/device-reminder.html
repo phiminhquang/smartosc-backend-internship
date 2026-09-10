@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Device Return Reminder</title>
+</head>
+
+<body>
+<h2>Nhắc nhở trả thiết bị</h2>
+
+<p>
+    Xin chào <strong th:text="${userName}">User</strong>,
+</p>
+
+<p>
+    Thiết bị <strong th:text="${deviceName}">Device</strong>
+    của bạn sắp đến hạn trả.
+</p>
+
+<p>
+    Serial:
+    <span th:text="${serialNumber}">Serial</span>
+</p>
+
+<p>
+    Hạn trả:
+    <strong th:text="${expectedReturnAt}">Date</strong>
+</p>
+
+<p>Vui lòng hoàn trả thiết bị đúng hạn.</p>
+</body>
+</html>

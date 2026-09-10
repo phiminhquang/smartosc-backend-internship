@@ -2,6 +2,7 @@ package com.example.device.service.impl;
 
 import com.example.device.dto.request.DeviceAssignmentRequest;
 import com.example.device.dto.request.ReturnDeviceRequest;
+import com.example.device.dto.request.UserCreationRequest;
 import com.example.device.dto.response.AssignmentResponse;
 import com.example.device.dto.response.DeviceAssignmentResponse;
 import com.example.device.enums.DeviceAssignmentStatus;
@@ -29,6 +30,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -87,6 +89,36 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     @Transactional
+    public int sendOverdueNotifications() {
+        List<DeviceAssignment> assignments = deviceAssignmentRepository.findOverdueForNotification(DeviceAssignmentStatus.OVERDUE);
+        int sent = 0;
+
+        for (DeviceAssignment assignment : assignments) {
+            try {
+                User user = assignment.getUser();
+                Device device = assignment.getDevice();
+
+                Map<String, Object> variables = Map.of(
+                        "userName", user.getName(),
+                        "deviceName", device.getName(),
+                        "serialNumber", device.getSerialNumber(),
+                        "expectedReturnAt", assignment.getExpectedReturnAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                );
+
+                emailService.sendHtmlEmail(user.getEmail(), "Thông báo thiết bị quá hạn", "email/device-overdue", variables);
+                assignment.setOverdueNotifiedAt(LocalDateTime.now());
+                sent++;
+            } catch (Exception e) {
+                System.out.println("Không gửi được email tới " + assignment.getUser().getEmail() + ": " + e.getMessage());
+            }
+        }
+
+        deviceAssignmentRepository.saveAll(assignments);
+        return sent;
+    }
+
+    @Override
+    @Transactional
     public DeviceAssignmentResponse returnDevice(UUID assignmentId, ReturnDeviceRequest request) {
         DeviceAssignment assignment = deviceAssignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
@@ -120,53 +152,24 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     public int sendDailyOverdueSummary() {
-        List<DeviceAssignment> assignments = deviceAssignmentRepository
-                .findByStatusOrderByExpectedReturnAtAsc(DeviceAssignmentStatus.OVERDUE);
+        List<DeviceAssignment> assignments = deviceAssignmentRepository.findByStatusOrderByExpectedReturnAtAsc(DeviceAssignmentStatus.OVERDUE);
+        if (assignments.isEmpty()) return 0;
 
-        if (assignments.isEmpty()) {
-            return 0;
-        }
+        List<User> recipients = userRepository.findDistinctByRoles_NameIn(List.of("ADMIN", "IT_STAFF"));
+        if (recipients.isEmpty()) return 0;
 
-        List<User> recipients = userRepository
-                .findDistinctByRoles_NameIn(List.of("ADMIN", "IT_STAFF"));
-
-        if (recipients.isEmpty()) {
-            return 0;
-        }
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
-        StringBuilder content = new StringBuilder();
-        content.append("DANH SÁCH THIẾT BỊ QUÁ HẠN\n\n");
-        content.append("Tổng số thiết bị quá hạn: ").append(assignments.size()).append("\n\n");
-
-        int index = 1;
-
-        for (DeviceAssignment assignment : assignments) {
-            content.append(index++).append(". ")
-                    .append(assignment.getDevice().getName()).append("\n")
-                    .append("Serial: ").append(assignment.getDevice().getSerialNumber()).append("\n")
-                    .append("Người giữ: ").append(assignment.getUser().getName()).append("\n")
-                    .append("Email: ").append(assignment.getUser().getEmail()).append("\n")
-                    .append("Hạn trả: ").append(assignment.getExpectedReturnAt().format(formatter))
-                    .append("\n\n");
-        }
-
-        String subject = "Báo cáo thiết bị quá hạn - "
-                + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        Map<String, Object> variables = Map.of("assignments", assignments, "total", assignments.size());
+        String subject = "Báo cáo thiết bị quá hạn - " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
         int sent = 0;
-
         for (User recipient : recipients) {
             try {
-                emailService.sendEmail(recipient.getEmail(), subject, content.toString());
+                emailService.sendHtmlEmail(recipient.getEmail(), subject, "email/overdue-report", variables);
                 sent++;
             } catch (Exception e) {
-                System.out.println("Không gửi được báo cáo quá hạn tới "
-                        + recipient.getEmail() + ": " + e.getMessage());
+                System.out.println("Không gửi được báo cáo tới " + recipient.getEmail() + ": " + e.getMessage());
             }
         }
-
         return sent;
     }
 
@@ -179,8 +182,9 @@ public class AssignmentServiceImpl implements AssignmentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<DeviceAssignmentResponse> getAssignments() {
-        return deviceAssignmentRepository.findAllByOrderByAssignedAtDesc()
+        return deviceAssignmentRepository.findAllWithUserAndDevice()
                 .stream()
                 .map(deviceAssignmentMapper::toResponse)
                 .toList();
@@ -199,7 +203,7 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     public List<DeviceAssignmentResponse> getAssignmentsByStatus(DeviceAssignmentStatus status) {
-        return deviceAssignmentRepository.findByStatusOrderByAssignedAtDesc(status)
+        return deviceAssignmentRepository.findByStatusWithDetails(status)
                 .stream()
                 .map(deviceAssignmentMapper::toResponse)
                 .toList();
@@ -208,50 +212,14 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     @Transactional
     public int updateOverdueAssignments() {
-        List<DeviceAssignment> assignments = deviceAssignmentRepository
-                .findByStatusAndExpectedReturnAtBefore(
-                        DeviceAssignmentStatus.ACTIVE,
-                        LocalDateTime.now()
-                );
 
-        assignments.forEach(a -> a.setStatus(DeviceAssignmentStatus.OVERDUE));
-        return assignments.size();
+        return deviceAssignmentRepository.updateOverdueAssignments(
+                DeviceAssignmentStatus.ACTIVE,
+                DeviceAssignmentStatus.OVERDUE,
+                LocalDateTime.now()
+        );
     }
 
-    @Override
-    @Transactional
-    public int sendOverdueNotifications() {
-        List<DeviceAssignment> assignments = deviceAssignmentRepository
-                .findByStatusAndOverdueNotifiedAtIsNull(DeviceAssignmentStatus.OVERDUE);
-
-        int sent = 0;
-
-        for (DeviceAssignment assignment : assignments) {
-            try {
-                User user = assignment.getUser();
-                Device device = assignment.getDevice();
-
-                String subject = "Thông báo thiết bị quá hạn";
-                String content = "Xin chào " + user.getName() + ",\n\n"
-                        + "Thiết bị " + device.getName() + " (" + device.getSerialNumber() + ") đã quá hạn trả.\n"
-                        + "Hạn trả: " + assignment.getExpectedReturnAt() + "\n\n"
-                        + "Vui lòng liên hệ bộ phận IT để hoàn trả thiết bị.";
-
-                emailService.sendEmail(user.getEmail(), subject, content);
-                assignment.setOverdueNotifiedAt(LocalDateTime.now());
-                sent++;
-            } catch (Exception e) {
-                System.out.println("Không gửi được email tới " + assignment.getUser().getEmail() + ": " + e.getMessage());
-            }
-        }
-
-        deviceAssignmentRepository.saveAll(assignments);
-        return sent;
-    }
-    private String getCurrentUserEmail() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication.getName();
-    }
 
     @Override
     @Transactional
@@ -270,13 +238,20 @@ public class AssignmentServiceImpl implements AssignmentService {
                 User user = assignment.getUser();
                 Device device = assignment.getDevice();
 
-                String subject = "Nhắc nhở thiết bị sắp đến hạn trả";
-                String content = "Xin chào " + user.getName() + ",\n\n"
-                        + "Thiết bị " + device.getName() + " (" + device.getSerialNumber() + ") sắp đến hạn trả.\n"
-                        + "Hạn trả: " + assignment.getExpectedReturnAt() + "\n\n"
-                        + "Vui lòng hoàn trả thiết bị đúng hạn.";
+                Map<String, Object> variables = Map.of(
+                        "userName", user.getName(),
+                        "deviceName", device.getName(),
+                        "serialNumber", device.getSerialNumber(),
+                        "expectedReturnAt", assignment.getExpectedReturnAt()
+                                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                );
 
-                emailService.sendEmail(user.getEmail(), subject, content);
+                emailService.sendHtmlEmail(
+                        user.getEmail(),
+                        "Nhắc nhở thiết bị sắp đến hạn trả",
+                        "email/device-reminder",
+                        variables
+                );
                 assignment.setReminderNotifiedAt(LocalDateTime.now());
                 sent++;
             } catch (Exception e) {
@@ -296,6 +271,11 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .stream()
                 .map(deviceAssignmentMapper::toResponse)
                 .toList();
+    }
+
+    private String getCurrentUserEmail() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getName();
     }
 
 }

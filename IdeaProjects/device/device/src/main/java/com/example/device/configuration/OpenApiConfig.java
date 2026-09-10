@@ -1,4 +1,4 @@
-package com.example.device.config;
+package com.example.device.configuration;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;

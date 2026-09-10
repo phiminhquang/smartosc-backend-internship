@@ -155,7 +155,7 @@ public class DeviceRepairServiceImpl implements DeviceRepairService {
     }
 
     private DeviceRepair getRepairEntity(UUID repairId) {
-        return repairRepository.findById(repairId)
+        return repairRepository.findByIdWithDevice(repairId)
                 .orElseThrow(() -> new AppException(ErrorCode.REPAIR_NOT_FOUND));
     }
 

@@ -143,7 +143,7 @@ public class AssignmentExtensionServiceImpl implements AssignmentExtensionServic
     }
 
     private AssignmentExtension getPendingRequest(UUID requestId) {
-        AssignmentExtension extension = extensionRepository.findById(requestId)
+        AssignmentExtension extension = extensionRepository.findByIdWithDetails(requestId)
                 .orElseThrow(() -> new AppException(ErrorCode.EXTENSION_REQUEST_NOT_FOUND));
 
         if (extension.getStatus() != ExtensionRequestStatus.PENDING) {

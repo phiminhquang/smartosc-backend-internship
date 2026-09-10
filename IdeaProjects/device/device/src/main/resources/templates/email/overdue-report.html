@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Overdue Report</title>
+</head>
+<body>
+<h2>Danh sách thiết bị quá hạn</h2>
+
+<p>
+    Tổng số thiết bị quá hạn:
+    <strong th:text="${total}">0</strong>
+</p>
+
+<table border="1" cellpadding="6" cellspacing="0">
+    <tr>
+        <th>STT</th>
+        <th>Thiết bị</th>
+        <th>Serial</th>
+        <th>Người giữ</th>
+        <th>Email</th>
+        <th>Hạn trả</th>
+    </tr>
+
+    <tr th:each="assignment, stat : ${assignments}">
+        <td th:text="${stat.count}"></td>
+        <td th:text="${assignment.device.name}"></td>
+        <td th:text="${assignment.device.serialNumber}"></td>
+        <td th:text="${assignment.user.name}"></td>
+        <td th:text="${assignment.user.email}"></td>
+        <td th:text="${#temporals.format(assignment.expectedReturnAt, 'dd/MM/yyyy HH:mm')}"></td>
+    </tr>
+</table>
+</body>
+</html>

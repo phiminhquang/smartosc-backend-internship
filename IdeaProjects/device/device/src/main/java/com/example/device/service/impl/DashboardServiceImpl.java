@@ -25,27 +25,58 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     @Transactional(readOnly = true)
     public DashboardResponse getStatistics() {
+
+        DeviceRepository.DeviceStatistics deviceStats =
+                deviceRepository.getStatistics(
+                        DeviceState.AVAILABLE,
+                        DeviceState.ASSIGNED,
+                        DeviceState.UNDER_REPAIR
+                );
+
+        DeviceAssignmentRepository.AssignmentStatistics assignmentStats =
+                assignmentRepository.getStatistics(
+                        DeviceAssignmentStatus.ACTIVE,
+                        DeviceAssignmentStatus.OVERDUE,
+                        DeviceAssignmentStatus.RETURNED
+                );
+
+        DeviceRepairRepository.RepairStatistics repairStats =
+                repairRepository.getStatistics(
+                        RepairStatus.PENDING,
+                        RepairStatus.IN_PROGRESS,
+                        RepairStatus.COMPLETED,
+                        RepairStatus.UNREPAIRABLE
+                );
+
+        UserRepository.UserStatistics userStats =
+                userRepository.getStatistics(
+                        "EMPLOYEE",
+                        "IT_STAFF",
+                        "ADMIN"
+                );
+
         return DashboardResponse.builder()
-                .totalDevices(deviceRepository.count())
-                .availableDevices(deviceRepository.countByState(DeviceState.AVAILABLE))
-                .assignedDevices(deviceRepository.countByState(DeviceState.ASSIGNED))
-                .underRepairDevices(deviceRepository.countByState(DeviceState.UNDER_REPAIR))
+                .totalDevices(deviceStats.getTotalDevices())
+                .availableDevices(deviceStats.getAvailableDevices())
+                .assignedDevices(deviceStats.getAssignedDevices())
+                .underRepairDevices(deviceStats.getUnderRepairDevices())
 
-                .totalAssignments(assignmentRepository.count())
-                .activeAssignments(assignmentRepository.countByStatus(DeviceAssignmentStatus.ACTIVE))
-                .overdueAssignments(assignmentRepository.countByStatus(DeviceAssignmentStatus.OVERDUE))
-                .returnedAssignments(assignmentRepository.countByStatus(DeviceAssignmentStatus.RETURNED))
+                .totalAssignments(assignmentStats.getTotalAssignments())
+                .activeAssignments(assignmentStats.getActiveAssignments())
+                .overdueAssignments(assignmentStats.getOverdueAssignments())
+                .returnedAssignments(assignmentStats.getReturnedAssignments())
 
-                .totalRepairs(repairRepository.count())
-                .pendingRepairs(repairRepository.countByStatus(RepairStatus.PENDING))
-                .inProgressRepairs(repairRepository.countByStatus(RepairStatus.IN_PROGRESS))
-                .completedRepairs(repairRepository.countByStatus(RepairStatus.COMPLETED))
-                .unrepairableRepairs(repairRepository.countByStatus(RepairStatus.UNREPAIRABLE))
+                .totalRepairs(repairStats.getTotalRepairs())
+                .pendingRepairs(repairStats.getPendingRepairs())
+                .inProgressRepairs(repairStats.getInProgressRepairs())
+                .completedRepairs(repairStats.getCompletedRepairs())
+                .unrepairableRepairs(repairStats.getUnrepairableRepairs())
 
-                .totalUsers(userRepository.count())
-                .employees(userRepository.countDistinctByRoles_Name("EMPLOYEE"))
-                .itStaff(userRepository.countDistinctByRoles_Name("IT_STAFF"))
-                .admins(userRepository.countDistinctByRoles_Name("ADMIN"))
+                .totalUsers(userStats.getTotalUsers())
+                .employees(userStats.getEmployees())
+                .itStaff(userStats.getItStaff())
+                .admins(userStats.getAdmins())
+
                 .build();
     }
 }

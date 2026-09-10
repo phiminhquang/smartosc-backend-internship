@@ -56,9 +56,9 @@ public class UserServiceimpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UserCreationResponse> getUsers() {
-
-        return userRepository.findAll()
+        return userRepository.findAllWithRoles()
                 .stream()
                 .map(userMapper::toUserResponse)
                 .toList();
