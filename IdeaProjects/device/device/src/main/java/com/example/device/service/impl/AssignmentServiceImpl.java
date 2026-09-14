@@ -28,8 +28,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -45,6 +47,14 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final DeviceRepository deviceRepository;
     private final DeviceAssignmentMapper deviceAssignmentMapper;
     private final EmailService emailService;
+
+    private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy 'lúc' h:mm:ss a",
+            Locale.forLanguageTag("vi-VN")
+    );
+    private String formatLocalTime(LocalDateTime time) {
+        return time.atZone(VN_ZONE).format(formatter);
+    }
 
     @Value("${app.scheduler.reminder-hours}")
     private long reminderHours;
@@ -102,7 +112,7 @@ public class AssignmentServiceImpl implements AssignmentService {
                         "userName", user.getName(),
                         "deviceName", device.getName(),
                         "serialNumber", device.getSerialNumber(),
-                        "expectedReturnAt", assignment.getExpectedReturnAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                        "expectedReturnAt", formatLocalTime(assignment.getExpectedReturnAt())
                 );
 
                 emailService.sendHtmlEmail(user.getEmail(), "Thông báo thiết bị quá hạn", "email/device-overdue", variables);
@@ -158,7 +168,16 @@ public class AssignmentServiceImpl implements AssignmentService {
         List<User> recipients = userRepository.findDistinctByRoles_NameIn(List.of("ADMIN", "IT_STAFF"));
         if (recipients.isEmpty()) return 0;
 
-        Map<String, Object> variables = Map.of("assignments", assignments, "total", assignments.size());
+        List<Map<String, Object>> rows = assignments.stream()
+                .map(a -> Map.<String, Object>of(
+                        "deviceName", a.getDevice().getName(),
+                        "serialNumber", a.getDevice().getSerialNumber(),
+                        "userName", a.getUser().getName(),
+                        "email", a.getUser().getEmail(),
+                        "expectedReturnAt", formatLocalTime(a.getExpectedReturnAt())
+                )).toList();
+
+        Map<String, Object> variables = Map.of("assignments", rows, "total", rows.size());
         String subject = "Báo cáo thiết bị quá hạn - " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
         int sent = 0;
@@ -242,8 +261,7 @@ public class AssignmentServiceImpl implements AssignmentService {
                         "userName", user.getName(),
                         "deviceName", device.getName(),
                         "serialNumber", device.getSerialNumber(),
-                        "expectedReturnAt", assignment.getExpectedReturnAt()
-                                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                        "expectedReturnAt", formatLocalTime(assignment.getExpectedReturnAt())
                 );
 
                 emailService.sendHtmlEmail(

@@ -24,11 +24,11 @@
 
     <tr th:each="assignment, stat : ${assignments}">
         <td th:text="${stat.count}"></td>
-        <td th:text="${assignment.device.name}"></td>
-        <td th:text="${assignment.device.serialNumber}"></td>
-        <td th:text="${assignment.user.name}"></td>
-        <td th:text="${assignment.user.email}"></td>
-        <td th:text="${#temporals.format(assignment.expectedReturnAt, 'dd/MM/yyyy HH:mm')}"></td>
+        <td th:text="${assignment.deviceName}"></td>
+        <td th:text="${assignment.serialNumber}"></td>
+        <td th:text="${assignment.userName}"></td>
+        <td th:text="${assignment.email}"></td>
+        <td th:text="${assignment.expectedReturnAt}"></td>
     </tr>
 </table>
 </body>
