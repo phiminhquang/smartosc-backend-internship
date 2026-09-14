@@ -18,7 +18,7 @@ public interface AssignmentService {
 
     List<DeviceAssignmentResponse> getAssignments();
 
-    List<DeviceAssignmentResponse> getDevicesByUser(UUID userId);
+    List<DeviceAssignmentResponse> getAssignmentsByUser(UUID userId);
 
     List<DeviceAssignmentResponse> getAssignmentsByStatus(DeviceAssignmentStatus status);
 

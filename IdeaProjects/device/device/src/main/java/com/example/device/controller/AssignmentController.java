@@ -52,14 +52,6 @@ public class AssignmentController {
                 .build();
     }
 
-    @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'IT_STAFF')")
-    public ApiResponse<List<DeviceAssignmentResponse>> getAssignments() {
-        return ApiResponse.<List<DeviceAssignmentResponse>>builder()
-                .result(assignmentService.getAssignments())
-                .build();
-    }
-
     @GetMapping("/{assignmentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'IT_STAFF')")
     public ApiResponse<DeviceAssignmentResponse> getAssignment(
@@ -69,21 +61,26 @@ public class AssignmentController {
                 .build();
     }
 
-    @GetMapping("/status/{status}")
+    @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'IT_STAFF')")
-    public ApiResponse<List<DeviceAssignmentResponse>> getAssignmentsByStatus(
-            @PathVariable DeviceAssignmentStatus status) {
+    public ApiResponse<List<DeviceAssignmentResponse>> getAssignments(
+            @RequestParam(required = false) DeviceAssignmentStatus status) {
+
+        List<DeviceAssignmentResponse> result = status == null
+                ? assignmentService.getAssignments()
+                : assignmentService.getAssignmentsByStatus(status);
+
         return ApiResponse.<List<DeviceAssignmentResponse>>builder()
-                .result(assignmentService.getAssignmentsByStatus(status))
+                .result(result)
                 .build();
     }
 
-    @GetMapping("/user/{userId}/devices")
+    @GetMapping("/user/{userId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'IT_STAFF')")
-    public ApiResponse<List<DeviceAssignmentResponse>> getDevicesByUser(
+    public ApiResponse<List<DeviceAssignmentResponse>> getAssignmentsByUser(
             @PathVariable UUID userId) {
         return ApiResponse.<List<DeviceAssignmentResponse>>builder()
-                .result(assignmentService.getDevicesByUser(userId))
+                .result(assignmentService.getAssignmentsByUser(userId))
                 .build();
     }
 }

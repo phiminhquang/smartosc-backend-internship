@@ -210,7 +210,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     }
 
     @Override
-    public List<DeviceAssignmentResponse> getDevicesByUser(UUID userId) {
+    public List<DeviceAssignmentResponse> getAssignmentsByUser(UUID userId) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 

@@ -22,11 +22,12 @@ public class AssignmentExtensionController {
 
     private final AssignmentExtensionService extensionService;
 
-    @PostMapping("/assignment/{assignmentId}")
+    @PostMapping("/assignments/{assignmentId}/extension-requests")
     @PreAuthorize("hasRole('EMPLOYEE')")
     public ApiResponse<ExtensionResponse> createRequest(
             @PathVariable UUID assignmentId,
             @Valid @RequestBody ExtensionRequestCreationRequest request) {
+
         return ApiResponse.<ExtensionResponse>builder()
                 .result(extensionService.createRequest(assignmentId, request))
                 .build();

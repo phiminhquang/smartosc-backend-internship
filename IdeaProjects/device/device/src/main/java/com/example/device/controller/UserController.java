@@ -4,6 +4,7 @@ import com.example.device.dto.request.UserCreationRequest;
 import com.example.device.dto.request.UserUpdateRequest;
 import com.example.device.dto.response.ApiResponse;
 import com.example.device.dto.response.UserCreationResponse;
+import com.example.device.service.AssignmentService;
 import com.example.device.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final AssignmentService assignmentService;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -89,4 +91,5 @@ public class UserController {
                 .result(userService.removeRole(userId, roleId))
                 .build();
     }
+
 }
