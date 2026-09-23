@@ -2,7 +2,9 @@ package com.example.device.repository;
 
 import com.example.device.enums.RepairStatus;
 import com.example.device.model.DeviceRepair;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,6 +18,10 @@ public interface DeviceRepairRepository extends JpaRepository<DeviceRepair, UUID
 
     boolean existsByDeviceId(UUID deviceId);
     boolean existsByDeviceIdAndStatusIn(UUID deviceId, List<RepairStatus> statuses);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from DeviceRepair r where r.id = :repairId")
+    Optional<DeviceRepair> findByIdForUpdate(@Param("repairId") UUID repairId);
 
     @Query("""
     select r from DeviceRepair r

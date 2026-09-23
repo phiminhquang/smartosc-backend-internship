@@ -39,7 +39,7 @@ public class AssignmentExtensionServiceImpl implements AssignmentExtensionServic
     @Override
     @Transactional
     public ExtensionResponse createRequest(UUID assignmentId, ExtensionRequestCreationRequest request) {
-        DeviceAssignment assignment = assignmentRepository.findById(assignmentId)
+        DeviceAssignment assignment = assignmentRepository.findByIdForUpdate(assignmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
 
         User currentUser = getCurrentUser();
@@ -88,8 +88,9 @@ public class AssignmentExtensionServiceImpl implements AssignmentExtensionServic
     @Override
     @Transactional
     public ExtensionResponse approveRequest(UUID requestId, ExtensionReviewRequest request) {
-        AssignmentExtension extension = getPendingRequest(requestId);
-        DeviceAssignment assignment = extension.getAssignment();
+        LockedExtension locked = getPendingRequestForUpdate(requestId);
+        AssignmentExtension extension = locked.extension();
+        DeviceAssignment assignment = locked.assignment();
 
         if (assignment.getStatus() == DeviceAssignmentStatus.RETURNED) {
             throw new AppException(ErrorCode.CANNOT_EXTEND_RETURNED_ASSIGNMENT);
@@ -118,7 +119,7 @@ public class AssignmentExtensionServiceImpl implements AssignmentExtensionServic
     @Override
     @Transactional
     public ExtensionResponse rejectRequest(UUID requestId, ExtensionReviewRequest request) {
-        AssignmentExtension extension = getPendingRequest(requestId);
+        AssignmentExtension extension = getPendingRequestForUpdate(requestId).extension();
 
         extension.setStatus(ExtensionRequestStatus.REJECTED);
         extension.setReviewedBy(getCurrentUser().getEmail());
@@ -142,16 +143,27 @@ public class AssignmentExtensionServiceImpl implements AssignmentExtensionServic
                 .toList();
     }
 
-    private AssignmentExtension getPendingRequest(UUID requestId) {
-        AssignmentExtension extension = extensionRepository.findByIdWithDetails(requestId)
+    private LockedExtension getPendingRequestForUpdate(UUID requestId) {
+        UUID assignmentId = extensionRepository.findAssignmentIdByRequestId(requestId)
+                .orElseThrow(() -> new AppException(ErrorCode.EXTENSION_REQUEST_NOT_FOUND));
+
+        DeviceAssignment assignment = assignmentRepository.findByIdForUpdate(assignmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
+
+        AssignmentExtension extension = extensionRepository.findByIdForUpdate(requestId)
                 .orElseThrow(() -> new AppException(ErrorCode.EXTENSION_REQUEST_NOT_FOUND));
 
         if (extension.getStatus() != ExtensionRequestStatus.PENDING) {
             throw new AppException(ErrorCode.EXTENSION_REQUEST_ALREADY_REVIEWED);
         }
 
-        return extension;
+        return new LockedExtension(extension, assignment);
     }
+
+    private record LockedExtension(
+            AssignmentExtension extension,
+            DeviceAssignment assignment
+    ) {}
 
     private void notifyAdmins(AssignmentExtension extension) {
         DeviceAssignment assignment = extension.getAssignment();

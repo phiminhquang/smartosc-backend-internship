@@ -37,7 +37,7 @@ public class DeviceRepairServiceImpl implements DeviceRepairService {
     @Override
     @Transactional
     public RepairResponse createRepair(RepairCreationRequest request) {
-        Device device = deviceRepository.findById(request.getDeviceId())
+        Device device = deviceRepository.findByIdForUpdate(request.getDeviceId())
                 .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
 
         if (device.getState() != DeviceState.UNDER_REPAIR) {
@@ -61,7 +61,7 @@ public class DeviceRepairServiceImpl implements DeviceRepairService {
     @Override
     @Transactional
     public RepairResponse startRepair(UUID repairId) {
-        DeviceRepair repair = getRepairEntity(repairId);
+        DeviceRepair repair = getRepairForUpdate(repairId);
 
         if (repair.getStatus() != RepairStatus.PENDING) {
             throw new AppException(ErrorCode.REPAIR_CANNOT_START);
@@ -77,7 +77,7 @@ public class DeviceRepairServiceImpl implements DeviceRepairService {
     @Override
     @Transactional
     public RepairResponse completeRepair(UUID repairId, RepairCompleteRequest request) {
-        DeviceRepair repair = getRepairEntity(repairId);
+        DeviceRepair repair = getRepairForUpdate(repairId);
 
         if (repair.getStatus() != RepairStatus.IN_PROGRESS) {
             throw new AppException(ErrorCode.REPAIR_CANNOT_FINISH);
@@ -103,7 +103,7 @@ public class DeviceRepairServiceImpl implements DeviceRepairService {
     @Override
     @Transactional
     public RepairResponse markUnrepairable(UUID repairId, RepairUnrepairableRequest request) {
-        DeviceRepair repair = getRepairEntity(repairId);
+        DeviceRepair repair = getRepairForUpdate(repairId);
 
         if (repair.getStatus() != RepairStatus.IN_PROGRESS) {
             throw new AppException(ErrorCode.REPAIR_CANNOT_FINISH);
@@ -156,6 +156,11 @@ public class DeviceRepairServiceImpl implements DeviceRepairService {
 
     private DeviceRepair getRepairEntity(UUID repairId) {
         return repairRepository.findByIdWithDevice(repairId)
+                .orElseThrow(() -> new AppException(ErrorCode.REPAIR_NOT_FOUND));
+    }
+
+    private DeviceRepair getRepairForUpdate(UUID repairId) {
+        return repairRepository.findByIdForUpdate(repairId)
                 .orElseThrow(() -> new AppException(ErrorCode.REPAIR_NOT_FOUND));
     }
 

@@ -2,7 +2,9 @@ package com.example.device.repository;
 
 import com.example.device.enums.DeviceAssignmentStatus;
 import com.example.device.model.DeviceAssignment;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,6 +22,11 @@ public interface DeviceAssignmentRepository extends JpaRepository<DeviceAssignme
 
     boolean existsByDeviceIdAndStatusIn(UUID deviceId, List<DeviceAssignmentStatus> statuses);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from DeviceAssignment a where a.id = :assignmentId")
+    Optional<DeviceAssignment> findByIdForUpdate(
+            @Param("assignmentId") UUID assignmentId
+    );
 
     @Query("""
     select a

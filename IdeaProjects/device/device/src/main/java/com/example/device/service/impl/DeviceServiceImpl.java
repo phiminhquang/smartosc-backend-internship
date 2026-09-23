@@ -114,7 +114,7 @@ public class DeviceServiceImpl implements DeviceService {
     @Override
     @Transactional
     public DeviceResponse updateDeviceState(UUID id, DeviceStatusUpdateRequest request) {
-        Device device = deviceRepository.findById(id)
+        Device device = deviceRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
 
         boolean hasOpenAssignment = deviceAssignmentRepository

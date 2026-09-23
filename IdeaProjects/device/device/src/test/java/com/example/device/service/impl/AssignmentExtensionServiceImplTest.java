@@ -88,7 +88,7 @@ class AssignmentExtensionServiceImplTest {
 
         loginAs("employee@gmail.com");
 
-        when(assignmentRepository.findById(assignmentId))
+        when(assignmentRepository.findByIdForUpdate(assignmentId))
                 .thenReturn(Optional.of(assignment));
 
         when(userRepository.findByEmail("employee@gmail.com"))
@@ -130,7 +130,7 @@ class AssignmentExtensionServiceImplTest {
 
         loginAs("employee@gmail.com");
 
-        when(assignmentRepository.findById(assignmentId))
+        when(assignmentRepository.findByIdForUpdate(assignmentId))
                 .thenReturn(Optional.of(assignment));
 
         when(userRepository.findByEmail("employee@gmail.com"))
@@ -191,7 +191,13 @@ class AssignmentExtensionServiceImplTest {
 
         loginAs("admin@gmail.com");
 
-        when(extensionRepository.findById(requestId))
+        when(extensionRepository.findAssignmentIdByRequestId(requestId))
+                .thenReturn(Optional.of(assignment.getId()));
+
+        when(assignmentRepository.findByIdForUpdate(assignment.getId()))
+                .thenReturn(Optional.of(assignment));
+
+        when(extensionRepository.findByIdForUpdate(requestId))
                 .thenReturn(Optional.of(extension));
 
         when(userRepository.findByEmail("admin@gmail.com"))

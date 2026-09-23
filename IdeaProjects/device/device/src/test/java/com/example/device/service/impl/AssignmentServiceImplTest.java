@@ -116,7 +116,7 @@ class AssignmentServiceImplTest {
         loginAs("it@gmail.com");
         mockUpdateReturnMapper();
 
-        when(deviceAssignmentRepository.findById(assignmentId))
+        when(deviceAssignmentRepository.findByIdForUpdate(assignmentId))
                 .thenReturn(Optional.of(assignment));
 
         assignmentService.returnDevice(assignmentId, request);
@@ -152,7 +152,7 @@ class AssignmentServiceImplTest {
         loginAs("it@gmail.com");
         mockUpdateReturnMapper();
 
-        when(deviceAssignmentRepository.findById(assignmentId))
+        when(deviceAssignmentRepository.findByIdForUpdate(assignmentId))
                 .thenReturn(Optional.of(assignment));
 
         assignmentService.returnDevice(assignmentId, request);
@@ -179,7 +179,7 @@ class AssignmentServiceImplTest {
         ReturnDeviceRequest request = new ReturnDeviceRequest();
         request.setCondition(DeviceReturnCondition.DAMAGED);
 
-        when(deviceAssignmentRepository.findById(assignmentId))
+        when(deviceAssignmentRepository.findByIdForUpdate(assignmentId))
                 .thenReturn(Optional.of(assignment));
 
         AppException exception = assertThrows(
@@ -202,7 +202,7 @@ class AssignmentServiceImplTest {
         ReturnDeviceRequest request = new ReturnDeviceRequest();
         request.setCondition(DeviceReturnCondition.GOOD);
 
-        when(deviceAssignmentRepository.findById(assignmentId))
+        when(deviceAssignmentRepository.findByIdForUpdate(assignmentId))
                 .thenReturn(Optional.of(assignment));
 
         AppException exception = assertThrows(

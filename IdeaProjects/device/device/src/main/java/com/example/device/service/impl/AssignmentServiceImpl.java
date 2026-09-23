@@ -130,7 +130,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Override
     @Transactional
     public DeviceAssignmentResponse returnDevice(UUID assignmentId, ReturnDeviceRequest request) {
-        DeviceAssignment assignment = deviceAssignmentRepository.findById(assignmentId)
+        DeviceAssignment assignment = deviceAssignmentRepository.findByIdForUpdate(assignmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.ASSIGNMENT_NOT_FOUND));
 
         if (assignment.getStatus() == DeviceAssignmentStatus.RETURNED) {

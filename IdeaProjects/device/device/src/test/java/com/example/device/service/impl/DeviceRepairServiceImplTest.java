@@ -56,7 +56,7 @@ class DeviceRepairServiceImplTest {
 
         loginAs("it@gmail.com");
 
-        when(repairRepository.findById(repairId))
+        when(repairRepository.findByIdForUpdate(repairId))
                 .thenReturn(Optional.of(repair));
 
         repairService.startRepair(repairId);
@@ -87,7 +87,7 @@ class DeviceRepairServiceImplTest {
 
         loginAs("it@gmail.com");
 
-        when(repairRepository.findById(repairId))
+        when(repairRepository.findByIdForUpdate(repairId))
                 .thenReturn(Optional.of(repair));
 
         repairService.completeRepair(repairId, request);
@@ -120,7 +120,7 @@ class DeviceRepairServiceImplTest {
 
         loginAs("it@gmail.com");
 
-        when(repairRepository.findById(repairId))
+        when(repairRepository.findByIdForUpdate(repairId))
                 .thenReturn(Optional.of(repair));
 
         repairService.markUnrepairable(repairId, request);
