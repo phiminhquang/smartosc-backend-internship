@@ -74,7 +74,14 @@ public enum ErrorCode {
     REPAIR_CANNOT_FINISH(1046, "Chỉ phiếu IN_PROGRESS mới có thể kết thúc", HttpStatus.BAD_REQUEST),
 
     DEVICE_HAS_REPAIR_HISTORY(1047, "Không thể xóa thiết bị đã có lịch sử sửa chữa", HttpStatus.BAD_REQUEST),
-    DEVICE_STATE_MANAGED_BY_REPAIR(1048, "Trạng thái thiết bị đang được quản lý bởi quy trình sửa chữa", HttpStatus.BAD_REQUEST);
+    DEVICE_STATE_MANAGED_BY_REPAIR(1048, "Trạng thái thiết bị đang được quản lý bởi quy trình sửa chữa", HttpStatus.BAD_REQUEST),
+
+    INVALID_FILE_TYPE(1049, "File không đúng định dạng", HttpStatus.BAD_REQUEST),
+    EMPTY_FILE(1050, "File không được để trống", HttpStatus.BAD_REQUEST),
+    INVALID_CSV_FILE(1051, "Dữ liệu CSV không hợp lệ", HttpStatus.BAD_REQUEST),
+    FILE_PROCESSING_ERROR(1052, "Không thể xử lý file", HttpStatus.INTERNAL_SERVER_ERROR),
+
+    DEVICE_CONCURRENTLY_MODIFIED(1053, "Thiết bị vừa được thay đổi bởi một yêu cầu khác, vui lòng thử lại", HttpStatus.CONFLICT);
 
     private final int code;
     private final String message;

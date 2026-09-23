@@ -7,16 +7,21 @@ import com.example.device.dto.request.DeviceUpdateRequest;
 import com.example.device.dto.response.DeviceResponse;
 import com.example.device.enums.DeviceCategory;
 import com.example.device.enums.DeviceState;
+import com.example.device.service.DeviceFileService;
 import com.example.device.service.DeviceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.example.device.dto.response.ApiResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -29,6 +34,7 @@ import java.util.UUID;
 public class DeviceController {
 
     private final DeviceService deviceService;
+    private final DeviceFileService deviceFileService;
 
     @PostMapping
     public ApiResponse<DeviceResponse> createDevice(
@@ -92,4 +98,29 @@ public class DeviceController {
                 .result(deviceService.updateDeviceState(id, request))
                 .build();
     }
+
+    @GetMapping("/export/csv")
+    public ResponseEntity<byte[]> exportCsv() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"devices.csv\"")
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
+                .body(deviceFileService.exportCsv());
+    }
+
+    @GetMapping("/export/excel")
+    public ResponseEntity<byte[]> exportExcel() {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"devices.xlsx\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(deviceFileService.exportExcel());
+    }
+
+    @PostMapping(value = "/import/csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Integer> importCsv(@RequestParam("file") MultipartFile file) {
+        return ApiResponse.<Integer>builder()
+                .message("Import thiết bị thành công")
+                .result(deviceFileService.importCsv(file))
+                .build();
+    }
+
 }

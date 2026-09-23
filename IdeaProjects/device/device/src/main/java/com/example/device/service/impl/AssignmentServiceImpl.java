@@ -91,7 +91,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         device.setUpdatedBy(currentUserEmail);
         device.setUpdatedTime(now);
 
-        deviceRepository.save(device);
+        deviceRepository.saveAndFlush(device);
         DeviceAssignment savedAssignment = deviceAssignmentRepository.save(assignment);
 
         return deviceAssignmentMapper.toResponse(savedAssignment);

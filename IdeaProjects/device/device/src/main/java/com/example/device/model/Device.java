@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -48,5 +49,10 @@ public class Device {
     private String updatedBy;
 
     @Column(name = "updated_time")
-    private LocalDateTime                                                                                                       updatedTime;
+    private LocalDateTime updatedTime;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
+
 }
