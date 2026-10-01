@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import { getErrorMessage } from '../services/http'
 
@@ -96,6 +96,12 @@ export function LoginPage() {
           <button className="primary-button" type="submit" disabled={submitting}>
             {submitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
           </button>
+
+          <p className="auth-footer-links">
+            <Link to="/forgot-password" className="text-link">
+              Quên mật khẩu?
+            </Link>
+          </p>
 
           <p className="learning-note">
             Form này gửi JSON tới <code>POST /api/auth/token</code>.

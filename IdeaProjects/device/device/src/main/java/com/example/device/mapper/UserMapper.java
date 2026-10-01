@@ -15,12 +15,15 @@ public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "systemOwner", ignore = true)
+    @Mapping(target = "tokenVersion", ignore = true)
     User toUser(UserCreationRequest request);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "systemOwner", ignore = true)
+    @Mapping(target = "tokenVersion", ignore = true)
     void updateUser(UserUpdateRequest request, @MappingTarget User user);
 
     UserCreationResponse toUserResponse(User user);

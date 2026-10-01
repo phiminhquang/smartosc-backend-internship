@@ -30,6 +30,10 @@ public class User {
     private String password;
 
     @Builder.Default
+    @Column(name = "token_version", nullable = false)
+    private long tokenVersion = 0;
+
+    @Builder.Default
     @Column(name = "system_owner", nullable = false)
     private boolean systemOwner = false;
 

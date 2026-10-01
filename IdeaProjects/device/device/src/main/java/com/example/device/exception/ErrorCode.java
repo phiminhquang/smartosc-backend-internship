@@ -81,7 +81,9 @@ public enum ErrorCode {
     INVALID_CSV_FILE(1051, "Dữ liệu CSV không hợp lệ", HttpStatus.BAD_REQUEST),
     FILE_PROCESSING_ERROR(1052, "Không thể xử lý file", HttpStatus.INTERNAL_SERVER_ERROR),
 
-    DEVICE_CONCURRENTLY_MODIFIED(1053, "Thiết bị vừa được thay đổi bởi một yêu cầu khác, vui lòng thử lại", HttpStatus.CONFLICT);
+    DEVICE_CONCURRENTLY_MODIFIED(1053, "Thiết bị vừa được thay đổi bởi một yêu cầu khác, vui lòng thử lại", HttpStatus.CONFLICT),
+
+    PASSWORD_RESET_TOKEN_INVALID(1054, "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

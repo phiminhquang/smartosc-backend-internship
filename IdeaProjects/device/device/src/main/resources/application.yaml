@@ -33,6 +33,11 @@ app:
     password: ${ADMIN_PASSWORD}
     name: Administrator
 
+  password-reset:
+    base-url: ${PASSWORD_RESET_BASE_URL:http://localhost:5173/reset-password}
+    expiration-minutes: ${PASSWORD_RESET_EXPIRATION_MINUTES:15}
+    cooldown-seconds: ${PASSWORD_RESET_COOLDOWN_SECONDS:60}
+
   scheduler:
     overdue-cron: "*/10 * * * * *"
     daily-overdue-report-cron: "0 0 8 * * *"

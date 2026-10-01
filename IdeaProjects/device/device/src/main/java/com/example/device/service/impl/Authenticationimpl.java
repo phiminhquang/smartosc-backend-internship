@@ -82,6 +82,7 @@ public class Authenticationimpl implements AuthenticationService {
                 .issueTime(new Date())
                 .expirationTime(Date.from(expiryTime))
                 .claim("scope", buildScope(user))
+                .claim("tokenVersion", user.getTokenVersion())
                 .build();
         SignedJWT signedJWT = new SignedJWT(header, claims);
         try {
@@ -104,15 +105,25 @@ public class Authenticationimpl implements AuthenticationService {
                 signerKey.getBytes(StandardCharsets.UTF_8)
         );
 
-        boolean signatureValid = signedJWT.verify(verifier);
+        if (!signedJWT.verify(verifier)) {
+            return false;
+        }
 
-        Date expirationTime = signedJWT
-                .getJWTClaimsSet()
-                .getExpirationTime();
+        JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
+        Date expirationTime = claims.getExpirationTime();
 
-        return signatureValid
-                && expirationTime != null
-                && expirationTime.toInstant().isAfter(Instant.now());
+        if (expirationTime == null || !expirationTime.toInstant().isAfter(Instant.now())) {
+            return false;
+        }
+
+        String subject = claims.getSubject();
+        Long tokenVersion = claims.getLongClaim("tokenVersion");
+
+        return subject != null
+                && tokenVersion != null
+                && userRepository.findByEmail(subject)
+                .map(user -> user.getTokenVersion() == tokenVersion)
+                .orElse(false);
     }
 
     private String buildScope(User user) {
@@ -125,4 +136,3 @@ public class Authenticationimpl implements AuthenticationService {
         return scope.toString();
     }
 }
-
