@@ -6,14 +6,14 @@ Tính năng đã có implementation backend và frontend nhưng chưa hoàn tấ
 
 ## Bằng chứng hiện có
 
-Các kết quả dưới đây được chuyển từ `AI-HANDOFF.md`; chưa phải toàn bộ test suite end-to-end:
+Đây là nguồn bằng chứng kiểm tra của feature. Các kết quả dưới đây được ghi từ những lần chạy thực tế được mô tả ở cuối file; chưa phải toàn bộ test suite end-to-end:
 
 | Kiểm tra | Kết quả | Phạm vi |
 |---|---|---|
 | `bash ./mvnw -DskipTests compile` | Thành công | Backend compile |
 | 28 unit/web-security test backend cô lập | 28 thành công, 0 failure/error | Password reset, authentication và security liên quan |
 | 15 test mục tiêu chạy lại ngày 2026-09-29 | 15 thành công, 0 failure/error | Password reset service, authentication, JWT version và controller security |
-| `bash scripts/verify.sh safe` ngày 2026-09-30 | Thành công | Tài liệu/diff, backend compile, 15 test mục tiêu, frontend lint/build |
+| `bash scripts/verify.sh safe` ngày 2026-10-02 | Thành công | Tài liệu/diff, backend compile, 15 test mục tiêu, frontend lint/build |
 | `git diff --check` | Thành công | Lỗi whitespace trong diff |
 | `DeviceApplicationTests.contextLoads` | Chưa chạy | Có nguy cơ dùng datasource thật và áp dụng Flyway lên Aiven |
 | `npm run lint` | Thành công | Frontend, oxlint |
@@ -112,3 +112,15 @@ Không thay `Chưa chạy` bằng `Thành công` nếu chưa có bằng chứng 
 - `npm run lint`: Thành công, không có lỗi oxlint.
 - `npm run build`: Thành công; TypeScript và Vite production build hoàn tất với 91 module.
 - Kiểm tra trình duyệt cho hành vi URL/referrer vẫn thuộc V-13 và chưa được đánh dấu hoàn thành.
+
+## Lần chạy 2026-10-02
+
+### Cổng kiểm tra sau khi chuẩn hóa tài liệu
+
+- Working tree: chỉ thay đổi tài liệu bàn giao, trạng thái, adapter Gemini và README frontend.
+- Lệnh: `bash scripts/verify.sh safe` tại thư mục gốc project.
+- Kết quả tài liệu/diff: thành công.
+- Kết quả backend compile: thành công.
+- Kết quả backend mục tiêu: 15 test thành công, 0 failure, 0 error, 0 skipped.
+- Kết quả frontend: Oxlint thành công; TypeScript/Vite production build thành công với 91 module.
+- Phần E2E database/email/trình duyệt vẫn chưa chạy và giữ nguyên trạng thái.

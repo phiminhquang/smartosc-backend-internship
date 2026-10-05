@@ -2,7 +2,7 @@
 
 ## Trạng thái
 
-- Giai đoạn: Đang kiểm chứng.
+- Giai đoạn: Verifying.
 - Phạm vi: Backend, database, email và frontend.
 - Nguồn trạng thái triển khai: `tasks.md`.
 - Nguồn bằng chứng kiểm tra: `verification.md`.

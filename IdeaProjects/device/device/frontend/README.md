@@ -1,32 +1,65 @@
-# React + TypeScript + Vite
+# Device Management Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Giao diện React/TypeScript cho hệ thống Device Management. Frontend cung cấp đăng nhập, dashboard được bảo vệ và luồng yêu cầu/xác nhận khôi phục mật khẩu.
 
-Currently, two official plugins are available:
+## Công nghệ
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19 và TypeScript.
+- Vite cho development server và production build.
+- React Router cho điều hướng.
+- Axios cho REST API.
+- Oxlint cho kiểm tra tĩnh.
 
-## React Compiler
+## Yêu cầu
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Node.js và npm.
+- Backend Device chạy tại `http://localhost:8080` khi phát triển local.
 
-## Expanding the Oxlint configuration
+## Chạy local
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Vite phục vụ frontend tại `http://localhost:5173`. Mọi request bắt đầu bằng `/api` được proxy tới backend local ở cổng `8080` theo `vite.config.ts`.
+
+## Lệnh chính
+
+```bash
+npm run dev      # development server
+npm run lint     # Oxlint
+npm run build    # TypeScript check và Vite production build
+npm run preview  # xem thử production build
+```
+
+Từ thư mục gốc project có thể dùng cổng chuẩn hóa:
+
+```bash
+bash scripts/verify.sh frontend
+```
+
+## Route hiện tại
+
+- `/login`: đăng nhập.
+- `/forgot-password`: yêu cầu email khôi phục mật khẩu.
+- `/reset-password`: xác nhận token và mật khẩu mới.
+- `/`: dashboard, yêu cầu access token hợp lệ.
+
+## Cấu trúc chính
+
+- `src/pages/`: các trang và luồng giao diện.
+- `src/components/`: component dùng lại và route protection.
+- `src/services/`: HTTP client và lời gọi API.
+- `src/auth/`: trạng thái/xử lý xác thực.
+- `src/types/`: kiểu dữ liệu API và domain.
+
+HTTP client dùng base URL `/api`. Access token được giữ trong `sessionStorage` với khóa `device_access_token` và tự gắn vào header `Authorization`.
+
+## Nguồn yêu cầu
+
+- Kiến trúc và quy tắc chung: `../PROJECT.md` và `../AGENTS.md`.
+- API contract của feature đang hoạt động: `../specs/<feature>/spec.md`.
+- Bằng chứng lint/build/E2E: `../specs/<feature>/verification.md`.
+
+Không ghi API key, mật khẩu, token thật hoặc URL chứa reset token vào README, source code hay Git.

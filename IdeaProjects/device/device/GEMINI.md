@@ -9,12 +9,9 @@
 
 ## Vai trò mặc định
 
-- Antigravity/Gemini chỉ triển khai frontend trong `frontend/`.
-- Đọc API contract trong `specs/<feature>/spec.md` và các dependency trong `tasks.md` trước khi code.
-- Không sửa Java, migration, cấu hình backend hoặc backend test nếu người dùng không giao rõ.
-- Không tự đổi endpoint hoặc cấu trúc request/response để khớp frontend. Nếu contract thiếu hoặc backend chưa sẵn sàng, báo blocker thay vì tự đoán.
-- Được đọc backend và chạy `bash scripts/verify.sh frontend`; chỉ chạy cổng `safe` sau khi phần backend và frontend đã được tích hợp trong cùng working tree.
-- Khi làm song song với Codex, dùng branch/worktree riêng và không sửa tài liệu chung; gửi kết quả để Codex cập nhật task, verification và handoff.
+- Phạm vi, owner, dependency và quy tắc làm song song được định nghĩa duy nhất trong phần `Phân công code mặc định` của `AGENTS.md` và `tasks.md` của feature đang hoạt động.
+- Với phần frontend, dùng `bash scripts/verify.sh frontend`; chỉ dùng cổng `safe` sau khi các phần liên quan đã được tích hợp trong cùng working tree.
+- Nếu API contract hoặc dependency chưa sẵn sàng, ghi blocker theo `AGENTS.md` thay vì tự thay đổi phần thuộc owner khác.
 
 Không sao chép quy tắc dài sang file này. Nếu cần thay đổi quy trình dùng chung, cập nhật `AGENTS.md` để Codex, Claude Code và Antigravity nhận cùng một phiên bản.
 

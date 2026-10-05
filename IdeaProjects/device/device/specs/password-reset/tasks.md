@@ -2,8 +2,8 @@
 
 ## Trạng thái tổng thể
 
-- Backend: Đã triển khai, cần kiểm chứng trên database test/staging.
-- Frontend: Đã triển khai, cần chạy lint/build và kiểm thử trình duyệt.
+- Backend: Đã triển khai và qua cổng kiểm tra tự động an toàn; còn kiểm chứng trên database test/staging.
+- Frontend: Đã triển khai, lint/build thành công; còn kiểm thử trình duyệt và E2E.
 - Phát hành: Chưa sẵn sàng.
 
 ## Phân công
@@ -50,9 +50,9 @@
 
 ## 5. Kiểm chứng tự động
 
-- [x] PR-301 Backend compile thành công theo bằng chứng handoff hiện có.
-- [x] PR-302 Nhóm 28 test backend cô lập thành công theo bằng chứng handoff hiện có.
-- [x] PR-303 `git diff --check` thành công theo bằng chứng handoff hiện có.
+- [x] PR-301 Backend compile thành công; xem bằng chứng trong `verification.md`.
+- [x] PR-302 Nhóm 28 test backend cô lập thành công; xem bằng chứng trong `verification.md`.
+- [x] PR-303 `git diff --check` thành công; xem bằng chứng trong `verification.md`.
 - [x] PR-304 Chạy lại 15 backend test mục tiêu cho password reset/JWT/security.
 - [x] PR-305 Chạy `npm run lint`.
 - [x] PR-306 Chạy `npm run build`.
