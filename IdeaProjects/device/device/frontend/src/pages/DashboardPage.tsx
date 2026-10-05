@@ -6,6 +6,7 @@ import {
   getDevices,
 } from '../services/deviceService'
 import { getErrorMessage } from '../services/http'
+import { PlusIcon, SearchIcon, TrashIcon, CloseIcon } from '../components/Icons'
 import type {
   DeviceCategory,
   DeviceCreationRequest,
@@ -132,7 +133,7 @@ export function DashboardPage() {
         <div>
           <h2>Danh sách Thiết bị</h2>
           <p className="section-subtitle">
-            Dữ liệu kết nối trực tiếp từ Spring Boot qua <code>GET /api/devices</code>
+            Theo dõi, cấp phát và quản lý toàn bộ thiết bị phần cứng trong tổ chức.
           </p>
         </div>
         <button
@@ -140,7 +141,8 @@ export function DashboardPage() {
           type="button"
           onClick={() => setIsModalOpen(true)}
         >
-          + Thêm thiết bị mới
+          <PlusIcon />
+          <span>Thêm thiết bị mới</span>
         </button>
       </section>
 
@@ -148,12 +150,14 @@ export function DashboardPage() {
         <input
           type="text"
           placeholder="Tìm theo tên thiết bị hoặc serial..."
+          aria-label="Tìm kiếm theo tên thiết bị hoặc serial"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />
 
         <select
           value={selectedCategory}
+          aria-label="Lọc theo danh mục thiết bị"
           onChange={(e) => {
             setSelectedCategory(e.target.value as DeviceCategory | '')
             setCurrentPage(0)
@@ -167,6 +171,7 @@ export function DashboardPage() {
 
         <select
           value={selectedState}
+          aria-label="Lọc theo trạng thái thiết bị"
           onChange={(e) => {
             setSelectedState(e.target.value as DeviceState | '')
             setCurrentPage(0)
@@ -179,7 +184,8 @@ export function DashboardPage() {
         </select>
 
         <button className="secondary-button" type="submit">
-          Tìm kiếm
+          <SearchIcon />
+          <span>Tìm kiếm</span>
         </button>
       </form>
 
@@ -194,12 +200,12 @@ export function DashboardPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Serial Number</th>
-                <th>Tên thiết bị</th>
-                <th>Model</th>
-                <th>Danh mục</th>
-                <th>Trạng thái</th>
-                <th>Thao tác</th>
+                <th scope="col">Serial Number</th>
+                <th scope="col">Tên thiết bị</th>
+                <th scope="col">Model</th>
+                <th scope="col">Danh mục</th>
+                <th scope="col">Trạng thái</th>
+                <th scope="col">Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -224,9 +230,11 @@ export function DashboardPage() {
                       <button
                         className="delete-button"
                         type="button"
+                        aria-label={`Xóa thiết bị ${device.name}`}
                         onClick={() => handleDelete(device.id, device.name)}
                       >
-                        Xóa
+                        <TrashIcon />
+                        <span>Xóa</span>
                       </button>
                     </td>
                   </tr>
@@ -243,6 +251,7 @@ export function DashboardPage() {
             type="button"
             className="secondary-button"
             disabled={devicePage.first}
+            aria-label="Chuyển về trang trước"
             onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
           >
             Trang trước
@@ -255,6 +264,7 @@ export function DashboardPage() {
             type="button"
             className="secondary-button"
             disabled={devicePage.last}
+            aria-label="Chuyển đến trang sau"
             onClick={() => setCurrentPage((prev) => prev + 1)}
           >
             Trang sau
@@ -270,9 +280,10 @@ export function DashboardPage() {
               <button
                 type="button"
                 className="close-button"
+                aria-label="Đóng hộp thoại thêm thiết bị"
                 onClick={() => setIsModalOpen(false)}
               >
-                ✕
+                <CloseIcon />
               </button>
             </div>
 
