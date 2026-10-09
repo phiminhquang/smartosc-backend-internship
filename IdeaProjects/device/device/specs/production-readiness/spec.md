@@ -109,6 +109,65 @@ Project có đủ nghiệp vụ để trình diễn nhưng chưa chứng minh đ
 - When xử lý file,
 - Then backend không được bắt buộc giữ toàn bộ bảng hoặc toàn bộ file trong bộ nhớ.
 
+## Hợp đồng API phân trang Giai đoạn 2 (PRD-201)
+
+Trạng thái: **Approved — người dùng duyệt PRD-202 ngày 2026-10-09 sau khi xác nhận đây là phần mở rộng phân trang từ devices sang users/assignments/repairs/extension requests và không tạo màn hình frontend mới**.
+
+### Quy ước chung
+
+- Các endpoint danh sách trong phạm vi trả `ApiResponse<PageResult<T>>`, không trả mảng trực tiếp.
+- Request dùng `page` zero-based, mặc định `0`; `size` mặc định `20`, hợp lệ từ `1` đến `100`.
+- `sort` có dạng `field,direction`, ví dụ `sort=assignedAt,desc`; chỉ chấp nhận một field trong allow-list của endpoint và `asc` hoặc `desc`.
+- Backend luôn thêm `id` làm khóa sắp xếp phụ để kết quả ổn định khi field chính trùng nhau. Khóa phụ không cần truyền từ client.
+- Chuỗi tìm kiếm được trim, bỏ qua hoa/thường và dài tối đa 100 ký tự. Enum dùng đúng giá trị đã công bố; UUID phải hợp lệ.
+- `page < 0`, `size < 1`, `size > 100`, sort/filter/UUID không hợp lệ trả HTTP `400`, code ứng dụng `1055` với thông điệp trung lập `Tham số phân trang, lọc hoặc sắp xếp không hợp lệ`.
+- Response chỉ cam kết các field ổn định dưới đây; không lộ metadata nội bộ của Spring `Pageable`/`Sort`:
+
+```json
+{
+  "code": 1000,
+  "result": {
+    "content": [],
+    "number": 0,
+    "size": 20,
+    "totalElements": 0,
+    "totalPages": 0,
+    "first": true,
+    "last": true,
+    "empty": true
+  }
+}
+```
+
+### Endpoint và allow-list
+
+| Endpoint | Filter | Sort cho phép | Sort mặc định |
+|---|---|---|---|
+| `GET /api/users` | `keyword` trên `name/email`; `role=ADMIN\|IT_STAFF\|EMPLOYEE` | `name`, `email` | `name,asc` + `id,asc` |
+| `GET /api/assignments` | `status`, `userId`, `deviceId` | `assignedAt`, `expectedReturnAt`, `returnedAt`, `status` | `assignedAt,desc` + `id,desc` |
+| `GET /api/assignments/me` | Không thêm filter; user lấy từ JWT | như assignments | `assignedAt,desc` + `id,desc` |
+| `GET /api/assignments/user/{userId}` | `userId` từ path | như assignments | `assignedAt,desc` + `id,desc` |
+| `GET /api/repairs` | `status`, `deviceId` | `createdAt`, `startedAt`, `finishedAt`, `status`, `cost` | `createdAt,desc` + `id,desc` |
+| `GET /api/repairs/device/{deviceId}` | `deviceId` từ path | như repairs | `createdAt,desc` + `id,desc` |
+| `GET /api/extension-requests/me` | `status` tùy chọn; user lấy từ JWT | `requestedAt`, `requestedReturnAt`, `reviewedAt`, `status` | `requestedAt,desc` + `id,desc` |
+| `GET /api/extension-requests/pending` | Luôn `status=PENDING` | `requestedAt`, `requestedReturnAt` | `requestedAt,asc` + `id,asc` |
+
+`GET /api/devices` giữ filter/response hiện tại nhưng phải dùng validation chung cho `page/size` và giới hạn `size=100`; frontend hiện truyền `size=10` nên không đổi hành vi màn hình hiện tại.
+
+### Tương thích và phạm vi frontend
+
+- Đây là breaking change có chủ ý cho tám endpoint hiện trả `List<T>`; endpoint chi tiết và endpoint ghi dữ liệu không đổi.
+- Frontend hiện chỉ gọi API thiết bị, chưa có service/page cho users, assignments, repairs hoặc extension requests; vì vậy branch backend không sửa `frontend/`.
+- Phạm vi PRD-202 đã duyệt: không tạo màn hình quản trị mới trong Giai đoạn 2. Khi có màn hình sản phẩm được duyệt, Antigravity dùng shape trang ổn định ở trên.
+
+### Nguyên tắc truy vấn và bằng chứng
+
+- Mọi query phải chọn thứ tự xác định với `id` làm tie-breaker; không dựa vào thứ tự tự nhiên của database.
+- Dùng `EXPLAIN ANALYZE`, dataset và phép đo lặp lại trước khi thêm index. Không thêm index chỉ vì một cột xuất hiện trong filter hoặc có selectivity thấp.
+- Offset pagination là contract đã duyệt. Deep page có thể chậm; nếu benchmark chứng minh bottleneck, cân nhắc truy vấn hai bước lấy page ID trên covering index rồi join/fetch DTO chi tiết. Không áp dụng mẹo này trước PRD-207/208/209.
+- Với quan hệ `User.roles` dạng to-many, không page trực tiếp trên collection fetch join; dùng page ID/two-step fetch hoặc chiến lược tương đương đã có integration test để tránh in-memory pagination và sai `totalElements`.
+- Video tham khảo do người dùng cung cấp: [Tối ưu phân trang MySQL trên bảng lớn](https://www.youtube.com/watch?v=tjT4O5HGIEU&t=870s). Con số trong video là ví dụ bên ngoài, không phải benchmark của Device.
+
 ### FR-4: Tính đúng đắn khi request đồng thời
 
 - Given hai request cùng thao tác lên một thiết bị, assignment, extension hoặc repair,

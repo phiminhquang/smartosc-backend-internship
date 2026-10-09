@@ -83,7 +83,9 @@ public enum ErrorCode {
 
     DEVICE_CONCURRENTLY_MODIFIED(1053, "Thiết bị vừa được thay đổi bởi một yêu cầu khác, vui lòng thử lại", HttpStatus.CONFLICT),
 
-    PASSWORD_RESET_TOKEN_INVALID(1054, "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST);
+    PASSWORD_RESET_TOKEN_INVALID(1054, "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST),
+
+    INVALID_PAGINATION_REQUEST(1055, "Tham số phân trang, lọc hoặc sắp xếp không hợp lệ", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

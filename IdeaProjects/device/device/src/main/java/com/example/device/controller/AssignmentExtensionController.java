@@ -4,6 +4,8 @@ import com.example.device.dto.request.ExtensionRequestCreationRequest;
 import com.example.device.dto.request.ExtensionReviewRequest;
 import com.example.device.dto.response.ApiResponse;
 import com.example.device.dto.response.ExtensionResponse;
+import com.example.device.dto.response.PageResult;
+import com.example.device.enums.ExtensionRequestStatus;
 import com.example.device.service.AssignmentExtensionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -11,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -35,17 +36,26 @@ public class AssignmentExtensionController {
 
     @GetMapping("/me")
     @PreAuthorize("hasRole('EMPLOYEE')")
-    public ApiResponse<List<ExtensionResponse>> getMyRequests() {
-        return ApiResponse.<List<ExtensionResponse>>builder()
-                .result(extensionService.getMyRequests())
+    public ApiResponse<PageResult<ExtensionResponse>> getMyRequests(
+            @RequestParam(required = false) ExtensionRequestStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
+    ) {
+        return ApiResponse.<PageResult<ExtensionResponse>>builder()
+                .result(extensionService.getMyRequests(status, page, size, sort))
                 .build();
     }
 
     @GetMapping("/pending")
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<List<ExtensionResponse>> getPendingRequests() {
-        return ApiResponse.<List<ExtensionResponse>>builder()
-                .result(extensionService.getPendingRequests())
+    public ApiResponse<PageResult<ExtensionResponse>> getPendingRequests(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
+    ) {
+        return ApiResponse.<PageResult<ExtensionResponse>>builder()
+                .result(extensionService.getPendingRequests(page, size, sort))
                 .build();
     }
 

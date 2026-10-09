@@ -3,15 +3,21 @@ package com.example.device.service;
 import com.example.device.dto.request.UserCreationRequest;
 import com.example.device.dto.request.UserUpdateRequest;
 import com.example.device.dto.response.UserCreationResponse;
+import com.example.device.dto.response.PageResult;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface UserService {
 
     UserCreationResponse createUser(UserCreationRequest request);
 
-    List<UserCreationResponse> getUsers();
+    PageResult<UserCreationResponse> getUsers(
+            String keyword,
+            String role,
+            int page,
+            int size,
+            String sort
+    );
 
     UserCreationResponse getUser(UUID userId);
 

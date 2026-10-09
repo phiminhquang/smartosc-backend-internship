@@ -109,15 +109,37 @@
 - Link reset đã dùng bị từ chối khi mở lại.
 - Không ghi mật khẩu hoặc reset token vào tài liệu. Đây là bằng chứng do người dùng thực hiện và xác nhận cho task `[Owner: User]` PRD-110.
 
+## Khởi động Giai đoạn 2 và PRD-201 ngày 2026-10-09
+
+- Sau khi PR #1 merge, local `main` được fast-forward tới merge commit `f5eef03`; post-merge Device CI đạt `safe` 1m01s, `integration` 1m03s và `compose-smoke` 2m38s.
+- GitHub Actions báo runtime Node 20/setup-java v4 deprecated. Release notes chính thức xác nhận `actions/checkout@v5`, `actions/setup-java@v5` và `actions/setup-node@v5` chạy Node 24 và yêu cầu runner `v2.327.1`; workflow đã được cập nhật sang v5. Branch CI run `37901442587` đạt `safe` 30s, `integration` 54s và `compose-smoke` 2m07s, không còn cảnh báo Node 20/setup-java v4.
+- Cùng CI run trên báo `ubuntu-latest` sẽ chuyển sang Ubuntu 26 từ 2026-10-19. Ba job được ghim `ubuntu-24.04`; branch CI run `37901920546` xác nhận `safe` 30s, `integration` 51s và `compose-smoke` 2m22s đều đạt, không còn cảnh báo đổi runner.
+- Codebase graph generation tại commit `f5eef03` xác nhận bốn controller danh sách gọi các service/repository đang trả `List`; kiểm tra coverage không ghi nhận khoảng trống ở các controller/service/repository liên quan. Frontend hiện chỉ có `deviceService`, không có consumer cho bốn nhóm API mới.
+- Video YouTube người dùng cung cấp được lấy metadata qua `yt-dlp`; hai backend caption trả rỗng nên dùng Groq Whisper fallback và lưu transcript tạm ngoài repository. Nội dung tham khảo nhấn mạnh deep `OFFSET`, deterministic sort, `EXPLAIN`, index theo bằng chứng và deferred join bằng page ID.
+- Contract proposed cho PRD-201 đã ghi trong `spec.md`: page zero-based, mặc định 20/tối đa 100, response page ổn định, filter/sort allow-list và tám endpoint bị breaking response. Tại mốc này PRD-202 còn mở và chưa sửa backend hoặc frontend.
+- `bash scripts/verify.sh safe` sau cập nhật workflow/contract: exit 0; documentation/diff check, backend compile, 15 backend test mục tiêu, 3 frontend contract/security test, lint và build 92 module đều đạt.
+
+## PRD-202 đến PRD-205 — API phân trang ngày 2026-10-09
+
+- Người dùng duyệt breaking response cho tám endpoint và phạm vi không tạo màn hình frontend mới sau khi xác nhận devices đã có phân trang, phần còn thiếu là users/assignments/repairs/extension requests.
+- Thêm `PageResult<T>` ổn định, `PaginationSupport` giới hạn `page >= 0`, `1 <= size <= 100`, sort allow-list và `id` tie-breaker. Input phân trang/filter/sort/enum/UUID sai trả HTTP `400`, code `1055`.
+- Users dùng query trang entity/ID trước rồi fetch roles theo tập ID, không page trên collection fetch join. Assignments, repairs và extensions dùng specification cùng entity graph chỉ chứa quan hệ to-one.
+- Tám endpoint collection đã trả page shape; `/api/devices` giữ response hiện tại nhưng dùng chung kiểm tra page/size, keyword tối đa 100 và sort xác định `name,id`.
+- `PaginationApiIntegrationTest` chạy qua MockMvc trên MySQL Testcontainers 8.4.11: 3 test đạt, bao phủ trang đầu/cuối, keyword/role/status/user/device filter, sort, tám endpoint, max size và input sai.
+- `bash scripts/verify.sh integration`: exit 0, Flyway V1/V2 áp dụng trên database tạm; 34 test đạt, 0 failure/error/skip. Script integration dùng Byte Buddy javaagent từ Maven cache khi có để Mockito không phụ thuộc cơ chế self-attach của máy chạy.
+- `bash scripts/verify.sh safe`: exit 0 sau implementation; documentation/diff check, backend compile, 15 backend test mục tiêu, 3 frontend contract/security test, lint và build 92 module đều đạt.
+- GitHub Device CI run `37904867768` cho commit implementation `ea1de52` đạt `safe` 32s, `integration` 1m09s và `compose-smoke` 2m00s trên runner `ubuntu-24.04`.
+- Không sửa file trong `frontend/`, không sửa `.env`, không thêm migration/index trước khi có dataset và benchmark PRD-207/208/209.
+
 ## Ma trận tiêu chí chấp nhận
 
 | ID | Tình huống | Kết quả mong đợi | Kết quả thực tế | Trạng thái |
 |---|---|---|---|---|
 | V-01 | Máy sạch khởi động stack | Frontend, backend, MySQL, Mailpit healthy bằng quy trình tài liệu hóa | Cả 4 service healthy trên máy local; chưa có clean-machine run | Một phần |
-| V-02 | Full test/migration | Chỉ dùng MySQL cô lập, không thể chạm Aiven ngoài ý muốn | 31 test đạt trên MySQL Testcontainers, Flyway V1/V2; biến DB môi trường bị bỏ | Đạt |
+| V-02 | Full test/migration | Chỉ dùng MySQL cô lập, không thể chạm Aiven ngoài ý muốn | 34 test đạt trên MySQL Testcontainers, Flyway V1/V2; biến DB môi trường bị bỏ | Đạt |
 | V-03 | Password reset E2E | Email/link/reset/login/token revocation đúng contract | Playwright Chromium đạt email/link/reset/login, URL/referrer và mật khẩu cũ/mới; JWT cũ có backend test nhưng chưa kiểm tra trên browser/Compose | Một phần |
-| V-04 | API list với dữ liệu lớn | Trả page có giới hạn/filter/sort đúng contract | Chưa chạy | Chưa chạy |
-| V-05 | Request size quá giới hạn | Bị từ chối hoặc giới hạn theo contract | Chưa chạy | Chưa chạy |
+| V-04 | API list với dữ liệu lớn | Trả page có giới hạn/filter/sort đúng contract | Chức năng page/filter/sort đạt trên MySQL thật; benchmark dataset lớn chờ PRD-207/208 | Một phần |
+| V-05 | Request size quá giới hạn | Bị từ chối hoặc giới hạn theo contract | `size=101` trên users và devices trả HTTP 400/code 1055 trong integration test | Đạt |
 | V-06 | Export dữ liệu lớn | Không bắt buộc nạp toàn bảng vào heap; file đúng | Chưa chạy | Chưa chạy |
 | V-07 | Import file lớn/lỗi dòng | Xử lý theo giới hạn và báo lỗi xác định | Chưa chạy | Chưa chạy |
 | V-08 | Query trước/sau index | Có query plan, dataset và số đo lặp lại được | Chưa chạy | Chưa chạy |
@@ -161,7 +183,7 @@ Lỗi hoặc giới hạn còn lại:
 - MySQL Testcontainers, Mailpit và Playwright Chromium đã chạy local; GitHub hosted runner đã checkout sạch, tạo volume mới và chạy đủ ba job CI thành công.
 - `DeviceApplicationTests` đã chạy runtime với Testcontainers và không dùng datasource ngoài.
 - Email hiện còn đồng bộ trong request/transaction ở các luồng quan trọng.
-- Collection không giới hạn và export `findAll()` có thể gây vấn đề khi dữ liệu tăng.
+- Tám collection PRD-201 đã có phân trang; export thiết bị vẫn dùng `findAll()` và cần PRD-206 trước khi thử dữ liệu lớn.
 - Chưa có kết quả concurrent integration test, benchmark, backup/restore hoặc deploy demo.
 
 ## Lần chạy baseline 2026-10-08
@@ -176,4 +198,4 @@ Lỗi hoặc giới hạn còn lại:
 ## Kết luận
 
 - Gate G1 và kiểm tra thủ công PRD-110 đã đạt, nhưng hệ thống chưa được tuyên bố production-ready vì các giai đoạn và follow-up bảo mật sau G1 còn mở.
-- Bước tiếp theo: tiếp tục Giai đoạn 2 theo task/dependency đã duyệt.
+- Bước tiếp theo: PRD-206/207 cho import-export và data generator, sau đó thu baseline PRD-208 trước khi quyết định index PRD-209.
