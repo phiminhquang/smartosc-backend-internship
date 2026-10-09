@@ -10,17 +10,17 @@
 - Backend, migration, email template và frontend đã được triển khai.
 - `bash scripts/verify.sh safe` và `bash scripts/verify.sh integration` được chạy lại ngày 2026-10-08 lúc 13:55-13:58 +07: safe đạt toàn bộ, integration đạt 31/31 test trên MySQL Testcontainers.
 - MySQL integration, Flyway V1/V2, full Compose frontend/backend/MySQL/Mailpit và Playwright Chromium browser E2E đã đạt local.
-- PR #1 đã merge vào `main` tại `f5eef03`; post-merge `safe`, `integration` và `compose-smoke` đều xanh.
-- Branch hiện tại cho Giai đoạn 2 là `feature/pagination-data-scale`. PRD-201 đến PRD-205 đã hoàn tất; bước backend tiếp theo là PRD-206/207/208 và chỉ thêm index sau benchmark PRD-209.
+- PR #2 đã merge vào `main` tại `d34854f`; post-merge `safe`, `integration` và `compose-smoke` đều xanh.
+- Branch hiện tại là `feature/device-file-scale`. PRD-206/207 đã implement tại commit `cf5d95a`, kiểm tra local và Device CI run `37909236650` đều đạt; bước tiếp theo là mở/merge PR, sau đó tách nhánh cho PRD-208 benchmark và PRD-209 query plan/index.
 - Chưa sẵn sàng public production vì PR-207/208/209 trong `tasks.md` còn mở.
 - Phân công mặc định và ranh giới chỉnh sửa tuân theo `AGENTS.md`; hiện không có ngoại lệ đang hoạt động.
 
 ## Nguồn sự thật cần đọc
 
-- Yêu cầu và API contract: `specs/password-reset/spec.md`.
-- Thiết kế triển khai và rollback: `specs/password-reset/plan.md`.
-- Trạng thái công việc và blocker: `specs/password-reset/tasks.md`.
-- Bằng chứng kiểm tra duy nhất: `specs/password-reset/verification.md`.
+- Yêu cầu và API contract đang hoạt động: `specs/production-readiness/spec.md`.
+- Thiết kế triển khai và rollback: `specs/production-readiness/plan.md`.
+- Trạng thái công việc và blocker: `specs/production-readiness/tasks.md`.
+- Bằng chứng kiểm tra duy nhất: `specs/production-readiness/verification.md`.
 - Quyết định bảo mật lâu dài: `docs/decisions/001-password-reset-token-and-session-revocation.md`.
 - Quy tắc project và cổng kiểm tra: `AGENTS.md` và `scripts/verify.sh`.
 
@@ -42,11 +42,11 @@
 
 ## Việc tiếp theo
 
-1. Người dùng duyệt PRD-202: breaking response cho tám endpoint và phạm vi frontend mặc định không tạo màn hình mới.
-2. Sau khi PRD-202 đạt, Codex thực hiện PRD-203/204 ở controller-service-repository và MySQL integration test; không sửa frontend.
-3. Tiếp tục PRD-206/207/208/209 dựa trên benchmark thật; không thêm index hoặc deferred join chỉ từ ví dụ video.
+1. Mở và merge PR cho `feature/device-file-scale` sau khi review trạng thái/check; xác nhận post-merge CI trên `main`.
+2. Thực hiện PRD-208 trên dataset tổng hợp có cấu hình máy, warm-up, nhiều lần chạy và số đo heap/latency trung thực.
+3. Chỉ thực hiện PRD-209 sau khi có query plan/baseline; không thêm index hoặc deferred join chỉ từ ví dụ bên ngoài.
 4. Trước public production, hoàn tất PR-207/208/209 trong password-reset `tasks.md`.
-5. Không tuyên bố production-ready chỉ từ Gate G1; các giai đoạn và follow-up bảo mật còn lại vẫn áp dụng.
+5. Không tuyên bố production-ready chỉ từ Gate G1/G2; các giai đoạn và follow-up bảo mật còn lại vẫn áp dụng.
 
 ## Cảnh báo vận hành
 
@@ -175,3 +175,13 @@
 - GitHub Device CI run `37904867768` tại commit `ea1de52` đạt đủ `safe`, `integration` và `compose-smoke` trên Ubuntu 24.04.
 - Frontend và `.env` không bị sửa. PRD-205 đóng N/A vì frontend hiện không tiêu thụ tám endpoint này.
 - Bước tiếp theo: PRD-206 thiết kế import/export lớn và PRD-207 tạo data generator an toàn; chưa thêm migration index trước baseline PRD-208.
+
+## Import/export và data generator PRD-206/207 ngày 2026-10-09
+
+- PR #2 merge vào `main` tại `d34854f`; post-merge run `37906680884` đạt `safe` 37 giây, `integration` 1 phút 01 giây và `compose-smoke` 2 phút 17 giây.
+- Tạo nhánh `feature/device-file-scale`. Contract HTTP ba endpoint file được giữ nguyên; export CSV/XLSX chuyển từ `findAll()` + toàn bộ `byte[]` sang response streaming và keyset batch `id,asc`.
+- XLSX dùng `SXSSFWorkbook` với row window hữu hạn và cleanup file tạm. Import CSV giới hạn 10 MiB, kiểm tra header/BOM, đọc tuần tự và flush/clear theo batch trong transaction nguyên tử.
+- Thêm generator CSV tổng hợp chỉ ghi filesystem, giới hạn 1 đến 1.000.000 row và từ chối ghi đè mặc định; không đọc `.env`, không có code database/mạng. Runbook: `docs/runbooks/device-data-scale.md`.
+- `bash scripts/verify.sh safe` đạt: 20 backend test, generator check, 3 frontend test, lint/build 92 module. Full integration cuối đạt 41/41 test trên MySQL 8.4.11 Testcontainers và Flyway V1/V2, gồm rollback toàn import sau khi batch đầu đã flush.
+- Device CI run `37909236650` tại commit `cf5d95a` đạt `safe` 44 giây, `integration` 1 phút 05 giây và `compose-smoke` 2 phút 20 giây trên Ubuntu 24.04.
+- Chưa sửa `frontend/`, `.env` hoặc migration/index. PRD-208/209 vẫn mở vì chưa chạy dataset lớn, peak heap/RSS/latency hay `EXPLAIN ANALYZE`.

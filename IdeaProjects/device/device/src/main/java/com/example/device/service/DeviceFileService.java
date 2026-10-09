@@ -2,11 +2,13 @@ package com.example.device.service;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.OutputStream;
+
 public interface DeviceFileService {
 
-    byte[] exportCsv();
+    void exportCsv(OutputStream outputStream);
 
-    byte[] exportExcel();
+    void exportExcel(OutputStream outputStream);
 
     int importCsv(MultipartFile file);
 }

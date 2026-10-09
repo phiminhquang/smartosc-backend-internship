@@ -22,6 +22,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.example.device.dto.response.ApiResponse;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.List;
 import java.util.UUID;
@@ -100,19 +101,23 @@ public class DeviceController {
     }
 
     @GetMapping("/export/csv")
-    public ResponseEntity<byte[]> exportCsv() {
+    public ResponseEntity<StreamingResponseBody> exportCsv() {
+        StreamingResponseBody body = deviceFileService::exportCsv;
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"devices.csv\"")
                 .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
-                .body(deviceFileService.exportCsv());
+                .body(body);
     }
 
     @GetMapping("/export/excel")
-    public ResponseEntity<byte[]> exportExcel() {
+    public ResponseEntity<StreamingResponseBody> exportExcel() {
+        StreamingResponseBody body = deviceFileService::exportExcel;
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"devices.xlsx\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                .body(deviceFileService.exportExcel());
+                .body(body);
     }
 
     @PostMapping(value = "/import/csv", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

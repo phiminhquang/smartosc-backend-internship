@@ -140,8 +140,8 @@
 | V-03 | Password reset E2E | Email/link/reset/login/token revocation đúng contract | Playwright Chromium đạt email/link/reset/login, URL/referrer và mật khẩu cũ/mới; JWT cũ có backend test nhưng chưa kiểm tra trên browser/Compose | Một phần |
 | V-04 | API list với dữ liệu lớn | Trả page có giới hạn/filter/sort đúng contract | Chức năng page/filter/sort đạt trên MySQL thật; benchmark dataset lớn chờ PRD-207/208 | Một phần |
 | V-05 | Request size quá giới hạn | Bị từ chối hoặc giới hạn theo contract | `size=101` trên users và devices trả HTTP 400/code 1055 trong integration test | Đạt |
-| V-06 | Export dữ liệu lớn | Không bắt buộc nạp toàn bảng vào heap; file đúng | Chưa chạy | Chưa chạy |
-| V-07 | Import file lớn/lỗi dòng | Xử lý theo giới hạn và báo lỗi xác định | Chưa chạy | Chưa chạy |
+| V-06 | Export dữ liệu lớn | Không bắt buộc nạp toàn bảng vào heap; file đúng | Unit test xác nhận CSV/XLSX đúng và repository được gọi theo keyset batch; MySQL test thực thi nhiều batch. Chưa benchmark dataset lớn/peak heap | Một phần |
+| V-07 | Import file lớn/lỗi dòng | Xử lý theo giới hạn và báo lỗi xác định | BOM/header/size/batch được test; MySQL test import thật và đếm dữ liệu đúng. Chưa benchmark file lớn hoặc ma trận lỗi nhiều vị trí | Một phần |
 | V-08 | Query trước/sau index | Có query plan, dataset và số đo lặp lại được | Chưa chạy | Chưa chạy |
 | V-09 | Hai request assign cùng device | Chỉ một kết quả hợp lệ; không có hai assignment mở | Chưa chạy | Chưa chạy |
 | V-10 | Hai request return/review/repair | State transition không bị lặp hoặc mâu thuẫn | Chưa chạy | Chưa chạy |
@@ -183,8 +183,21 @@ Lỗi hoặc giới hạn còn lại:
 - MySQL Testcontainers, Mailpit và Playwright Chromium đã chạy local; GitHub hosted runner đã checkout sạch, tạo volume mới và chạy đủ ba job CI thành công.
 - `DeviceApplicationTests` đã chạy runtime với Testcontainers và không dùng datasource ngoài.
 - Email hiện còn đồng bộ trong request/transaction ở các luồng quan trọng.
-- Tám collection PRD-201 đã có phân trang; export thiết bị vẫn dùng `findAll()` và cần PRD-206 trước khi thử dữ liệu lớn.
+- Tám collection PRD-201 đã có phân trang. Export thiết bị không còn dùng `findAll()`/`byte[]`; CSV/XLSX stream theo keyset batch, nhưng chưa có số đo dataset lớn PRD-208.
 - Chưa có kết quả concurrent integration test, benchmark, backup/restore hoặc deploy demo.
+
+## PRD-206/207 — Import/export giới hạn tài nguyên và data generator ngày 2026-10-09
+
+- PR #2 merge vào `main` tại `d34854f`; post-merge Device CI run `37906680884` đạt `safe` 37 giây, `integration` 1 phút 01 giây và `compose-smoke` 2 phút 17 giây.
+- Contract mới giữ nguyên ba endpoint/payload hiện có. CSV/XLSX export ghi trực tiếp vào response stream, đọc `devices` theo keyset `id,asc` batch 500; XLSX dùng `SXSSFWorkbook` row window 100 và dọn file tạm.
+- Import CSV giới hạn 10 MiB, kiểm tra extension/header, bỏ UTF-8 BOM, đọc tuần tự và flush/clear persistence context mỗi 100 row. File lỗi vẫn rollback toàn bộ transaction; file quá lớn dùng HTTP 400/code 1056.
+- `DeviceFileServiceImplTest`: 5/5 test đạt với Byte Buddy javaagent; bao phủ hai batch CSV, workbook XLSX đọc lại được, BOM, batch flush/clear, header thiếu và file quá giới hạn.
+- `PaginationApiIntegrationTest`: 5/5 test đạt trên MySQL 8.4.11 Testcontainers; test mới buộc export đi qua nhiều keyset batch, import ba row thật, và xác nhận lỗi ở row thứ ba rollback cả hai row đã flush trước đó.
+- `bash scripts/verify.sh safe`: exit 0; backend compile, 20 backend test, generator check, 3 frontend test, lint và build 92 module đạt.
+- `bash scripts/verify.sh integration` sau toàn bộ test MySQL mới: exit 0; 41 test đạt, 0 failure/error/skip; MySQL 8.4.11 Testcontainers và Flyway V1/V2 đạt.
+- GitHub Device CI run `37909236650` tại commit `cf5d95a` đạt `safe` 44 giây, `integration` 1 phút 05 giây và `compose-smoke` 2 phút 20 giây trên runner `ubuntu-24.04`.
+- `scripts/generate-device-csv.sh` tạo thử 7 row thành file 8 dòng gồm header và lần chạy lại không `--force` trả exit 2. Generator chỉ dùng `awk`/filesystem; hướng dẫn nằm tại `docs/runbooks/device-data-scale.md`.
+- Giới hạn bằng chứng: chưa chạy dataset 1k/10k/100k, chưa đo peak heap/RSS/latency và chưa lấy query plan. PRD-208/209 tiếp tục mở; không thêm index ở thay đổi này.
 
 ## Lần chạy baseline 2026-10-08
 
