@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Local configuration and generated frontend output
+.env
+.env.*
+!.env.example
+frontend/node_modules/
+frontend/dist/

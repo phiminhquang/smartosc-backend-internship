@@ -2,7 +2,7 @@
 
 ## Trạng thái tổng thể
 
-- Backend: Đã triển khai và qua cổng kiểm tra tự động an toàn; còn kiểm chứng trên database test/staging.
+- Backend: Đã triển khai, qua cổng an toàn và kiểm chứng trên MySQL Testcontainers/Compose local.
 - Frontend: Đã triển khai, lint/build thành công; còn kiểm thử trình duyệt và E2E.
 - Phát hành: Chưa sẵn sàng.
 
@@ -59,10 +59,10 @@
 
 ## 6. Kiểm chứng tích hợp
 
-- [ ] PR-401 Tạo database test/staging từ V1 và áp dụng migration V2.
-- [ ] PR-402 Cấu hình SMTP test và `PASSWORD_RESET_BASE_URL`.
-- [ ] PR-403 Kiểm tra yêu cầu reset với email tồn tại.
-- [ ] PR-404 Kiểm tra phản hồi trung lập với email không tồn tại.
+- [x] PR-401 Tạo database test/staging từ V1 và áp dụng migration V2.
+- [x] PR-402 Cấu hình SMTP test và `PASSWORD_RESET_BASE_URL`.
+- [x] PR-403 Kiểm tra yêu cầu reset với email tồn tại.
+- [x] PR-404 Kiểm tra phản hồi trung lập với email không tồn tại.
 - [ ] PR-405 Kiểm tra token đúng, sai, hết hạn và dùng lại.
 - [ ] PR-406 Kiểm tra cooldown và yêu cầu đồng thời.
 - [ ] PR-407 Xác nhận JWT cũ bị từ chối sau khi đổi mật khẩu.
@@ -72,9 +72,9 @@
 
 ## 7. Hoàn tất
 
-- [ ] PR-501 Review diff bảo mật và migration.
-- [ ] PR-502 Cập nhật `verification.md` bằng kết quả thật.
-- [ ] PR-503 Cập nhật `AI-HANDOFF.md`.
+- [x] PR-501 Review diff bảo mật và migration. Review lại ngày 2026-10-08 xác nhận token chỉ lưu hash, endpoint public đúng phạm vi, JWT có `tokenVersion`, V2 áp dụng thành công trên MySQL cô lập và không có secret production trong cấu hình mới; PR-207/208/209 vẫn là blocker phát hành.
+- [x] PR-502 Cập nhật `verification.md` bằng kết quả thật.
+- [x] PR-503 Cập nhật `AI-HANDOFF.md`.
 - [ ] PR-504 Tạo commit sau khi toàn bộ cổng chất lượng áp dụng đã đạt.
 
 ## Quy tắc cập nhật

@@ -1,0 +1,13 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Device Backend (IDE)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <envs>
+      <env name="SPRING_PROFILES_ACTIVE" value="dev,ide" />
+    </envs>
+    <module name="device" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.device.DeviceApplication" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

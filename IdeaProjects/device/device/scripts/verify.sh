@@ -59,19 +59,60 @@ test_password_reset_backend() {
 check_frontend() {
     (
         cd frontend
+        node --test \
+            test/auth-services.test.mjs \
+            test/security-referrer.test.mjs \
+            test/url-token-purge.test.mjs
         npm run lint
         npm run build
     )
 }
 
+test_frontend_compose_smoke() {
+    local required_urls=(
+        "http://127.0.0.1:8080/v3/api-docs"
+        "http://127.0.0.1:8025/api/v1/info"
+        "http://127.0.0.1:5173/"
+    )
+
+    local url
+    for url in "${required_urls[@]}"; do
+        if ! curl --fail --silent --show-error --output /dev/null "${url}"; then
+            printf 'Required Compose endpoint is not reachable: %s\n' "${url}" >&2
+            return 1
+        fi
+    done
+
+    (
+        cd frontend
+        FRONTEND_URL="http://127.0.0.1:5173" \
+            BACKEND_URL="http://127.0.0.1:8080" \
+            MAILPIT_URL="http://127.0.0.1:8025" \
+            npm run test:e2e
+    )
+}
+
+test_isolated_backend() {
+    if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
+        printf 'Docker daemon must be installed and reachable by this user for isolated MySQL Testcontainers tests.\n' >&2
+        return 1
+    fi
+
+    env -u DB_URL -u DB_USERNAME -u DB_PASSWORD \
+        -u SPRING_DATASOURCE_URL -u SPRING_DATASOURCE_USERNAME -u SPRING_DATASOURCE_PASSWORD \
+        bash ./mvnw test
+}
+
 show_usage() {
     printf '%s\n' \
-        'Usage: bash scripts/verify.sh [safe|docs|backend|frontend|password-reset]' \
+        'Usage: bash scripts/verify.sh [safe|docs|backend|frontend|frontend-e2e|password-reset|integration]' \
         '  safe           Documentation, backend compile, targeted password-reset tests, frontend lint/build.' \
         '  docs           Required documentation and git diff whitespace checks.' \
         '  backend        Backend compile only; does not run datasource-backed application tests.' \
-        '  frontend       Frontend lint and production build.' \
-        '  password-reset Targeted backend tests for password reset, JWT version and endpoint security.'
+        '  frontend       Frontend contract/security tests, lint and production build.' \
+        '  frontend-e2e   Playwright Chromium login/forgot/reset against the healthy full Compose stack.' \
+        '  password-reset Targeted backend tests for password reset, JWT version and endpoint security.' \
+        '  integration    Full backend tests using disposable MySQL Testcontainers; requires Docker.'
 }
 
 case "${mode}" in
@@ -90,8 +131,14 @@ case "${mode}" in
     frontend)
         check_frontend
         ;;
+    frontend-e2e)
+        test_frontend_compose_smoke
+        ;;
     password-reset)
         test_password_reset_backend
+        ;;
+    integration)
+        test_isolated_backend
         ;;
     -h|--help|help)
         show_usage

@@ -1,0 +1,87 @@
+name: Device CI
+
+on:
+  push:
+    paths:
+      - "IdeaProjects/device/device/**"
+      - ".github/workflows/device-ci.yml"
+  pull_request:
+    paths:
+      - "IdeaProjects/device/device/**"
+      - ".github/workflows/device-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safe:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: IdeaProjects/device/device
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: IdeaProjects/device/device/pom.xml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: IdeaProjects/device/device/frontend/package-lock.json
+      - run: npm ci
+        working-directory: IdeaProjects/device/device/frontend
+      - run: bash scripts/verify.sh safe
+
+  integration:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: IdeaProjects/device/device
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: IdeaProjects/device/device/pom.xml
+      - run: bash scripts/verify.sh integration
+
+  compose-smoke:
+    needs: [safe, integration]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: IdeaProjects/device/device
+    env:
+      ADMIN_EMAIL: admin@device.local
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: IdeaProjects/device/device/frontend/package-lock.json
+      - name: Generate ephemeral local credentials
+        shell: bash
+        run: |
+          local_password="$(openssl rand -hex 32)"
+          printf 'LOCAL_DB_PASSWORD=%s\n' "${local_password}" >> "${GITHUB_ENV}"
+          printf 'LOCAL_ADMIN_PASSWORD=%s\n' "${local_password}" >> "${GITHUB_ENV}"
+          printf 'ADMIN_PASSWORD=%s\n' "${local_password}" >> "${GITHUB_ENV}"
+          printf 'LOCAL_JWT_SIGNER_KEY=%s\n' "$(openssl rand -hex 64)" >> "${GITHUB_ENV}"
+      - run: npm ci
+        working-directory: IdeaProjects/device/device/frontend
+      - name: Install Playwright Chromium & dependencies
+        run: npx playwright install --with-deps chromium
+        working-directory: IdeaProjects/device/device/frontend
+      - run: docker compose config --quiet
+      - run: docker compose up --build --wait
+      - run: bash scripts/verify.sh frontend-e2e
+      - if: always()
+        run: docker compose down
