@@ -109,6 +109,15 @@
 - Link reset đã dùng bị từ chối khi mở lại.
 - Không ghi mật khẩu hoặc reset token vào tài liệu. Đây là bằng chứng do người dùng thực hiện và xác nhận cho task `[Owner: User]` PRD-110.
 
+## Khởi động Giai đoạn 2 và PRD-201 ngày 2026-10-09
+
+- Sau khi PR #1 merge, local `main` được fast-forward tới merge commit `f5eef03`; post-merge Device CI đạt `safe` 1m01s, `integration` 1m03s và `compose-smoke` 2m38s.
+- GitHub Actions báo runtime Node 20/setup-java v4 deprecated. Release notes chính thức xác nhận `actions/checkout@v5`, `actions/setup-java@v5` và `actions/setup-node@v5` chạy Node 24 và yêu cầu runner `v2.327.1`; workflow dùng GitHub-hosted runner đã được cập nhật sang v5, chờ CI branch xác nhận.
+- Codebase graph generation tại commit `f5eef03` xác nhận bốn controller danh sách gọi các service/repository đang trả `List`; kiểm tra coverage không ghi nhận khoảng trống ở các controller/service/repository liên quan. Frontend hiện chỉ có `deviceService`, không có consumer cho bốn nhóm API mới.
+- Video YouTube người dùng cung cấp được lấy metadata qua `yt-dlp`; hai backend caption trả rỗng nên dùng Groq Whisper fallback và lưu transcript tạm ngoài repository. Nội dung tham khảo nhấn mạnh deep `OFFSET`, deterministic sort, `EXPLAIN`, index theo bằng chứng và deferred join bằng page ID.
+- Contract proposed cho PRD-201 đã ghi trong `spec.md`: page zero-based, mặc định 20/tối đa 100, response page ổn định, filter/sort allow-list và tám endpoint bị breaking response. PRD-202 vẫn mở; chưa sửa backend hoặc frontend.
+- `bash scripts/verify.sh safe` sau cập nhật workflow/contract: exit 0; documentation/diff check, backend compile, 15 backend test mục tiêu, 3 frontend contract/security test, lint và build 92 module đều đạt.
+
 ## Ma trận tiêu chí chấp nhận
 
 | ID | Tình huống | Kết quả mong đợi | Kết quả thực tế | Trạng thái |

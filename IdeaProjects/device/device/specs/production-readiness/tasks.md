@@ -61,7 +61,7 @@
 
 ## Giai đoạn 2 — Phân trang, dữ liệu lớn và import/export
 
-- [ ] PRD-201 `[Owner: Codex] [AI thực hiện]` Bổ sung API contract phân trang/filter/sort cho users, assignments, repairs và extension requests. Phụ thuộc: G1.
+- [x] PRD-201 `[Owner: Codex] [AI thực hiện]` Bổ sung API contract phân trang/filter/sort cho users, assignments, repairs và extension requests. Contract proposed đã ghi trong `spec.md` ngày 2026-10-09; chưa implement trước PRD-202.
 - [ ] PRD-202 `[Owner: User] [AI hướng dẫn]` Duyệt contract breaking/change và phạm vi màn hình frontend. Phụ thuộc: PRD-201.
 - [ ] PRD-203 `[Owner: Codex] [AI thực hiện]` Implement phân trang/validation/allow-list ở controller-service-repository. Phụ thuộc: PRD-202.
 - [ ] PRD-204 `[Owner: Codex] [AI thực hiện]` Viết integration test cho page boundary, filter, sort và giới hạn size.
