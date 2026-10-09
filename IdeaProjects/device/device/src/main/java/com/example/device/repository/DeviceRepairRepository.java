@@ -4,17 +4,26 @@ import com.example.device.enums.RepairStatus;
 import com.example.device.model.DeviceRepair;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface DeviceRepairRepository extends JpaRepository<DeviceRepair, UUID> {
+public interface DeviceRepairRepository extends JpaRepository<DeviceRepair, UUID>, JpaSpecificationExecutor<DeviceRepair> {
+
+    @Override
+    @EntityGraph(attributePaths = "device")
+    Page<DeviceRepair> findAll(Specification<DeviceRepair> specification, Pageable pageable);
 
     boolean existsByDeviceId(UUID deviceId);
     boolean existsByDeviceIdAndStatusIn(UUID deviceId, List<RepairStatus> statuses);
@@ -22,21 +31,6 @@ public interface DeviceRepairRepository extends JpaRepository<DeviceRepair, UUID
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select r from DeviceRepair r where r.id = :repairId")
     Optional<DeviceRepair> findByIdForUpdate(@Param("repairId") UUID repairId);
-
-    @Query("""
-    select r from DeviceRepair r
-    join fetch r.device
-    order by r.createdAt desc
-""")
-    List<DeviceRepair> findAllByOrderByCreatedAtDesc();
-
-    @Query("""
-    select r from DeviceRepair r
-    join fetch r.device
-    where r.device.id = :deviceId
-    order by r.createdAt desc
-""")
-    List<DeviceRepair> findByDeviceIdOrderByCreatedAtDesc(@Param("deviceId") UUID deviceId);
 
     @Query("""
     select

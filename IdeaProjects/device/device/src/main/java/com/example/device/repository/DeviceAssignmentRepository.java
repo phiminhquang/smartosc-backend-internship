@@ -4,17 +4,26 @@ import com.example.device.enums.DeviceAssignmentStatus;
 import com.example.device.model.DeviceAssignment;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface DeviceAssignmentRepository extends JpaRepository<DeviceAssignment, UUID> {
+public interface DeviceAssignmentRepository extends JpaRepository<DeviceAssignment, UUID>, JpaSpecificationExecutor<DeviceAssignment> {
+
+    @Override
+    @EntityGraph(attributePaths = {"user", "device"})
+    Page<DeviceAssignment> findAll(Specification<DeviceAssignment> specification, Pageable pageable);
 
     boolean existsByDeviceId(UUID deviceId);
 
@@ -69,18 +78,6 @@ public interface DeviceAssignmentRepository extends JpaRepository<DeviceAssignme
     );
 
     @Query("""
-    select a
-    from DeviceAssignment a
-    join fetch a.user
-    join fetch a.device
-    where a.user.email = :email
-    order by a.assignedAt desc
-""")
-    List<DeviceAssignment> findByUser_EmailOrderByAssignedAtDesc(
-            @Param("email") String email
-    );
-
-    @Query("""
     select
         count(a) as totalAssignments,
         coalesce(sum(case when a.status = :active then 1 else 0 end), 0) as activeAssignments,
@@ -100,27 +97,6 @@ public interface DeviceAssignmentRepository extends JpaRepository<DeviceAssignme
         long getOverdueAssignments();
         long getReturnedAssignments();
     }
-
-    @Query("""
-    select a
-    from DeviceAssignment a
-    join fetch a.user
-    join fetch a.device
-    order by a.assignedAt desc
-""")
-    List<DeviceAssignment> findAllWithUserAndDevice();
-
-    @Query("""
-    select a
-    from DeviceAssignment a
-    join fetch a.user
-    join fetch a.device
-    where a.status = :status
-    order by a.assignedAt desc
-""")
-    List<DeviceAssignment> findByStatusWithDetails(
-            @Param("status") DeviceAssignmentStatus status
-    );
 
     @Query("""
     select a
@@ -153,18 +129,6 @@ public interface DeviceAssignmentRepository extends JpaRepository<DeviceAssignme
 
             @Param("now")
             LocalDateTime now
-    );
-
-    @Query("""
-    select a
-    from DeviceAssignment a
-    join fetch a.user
-    join fetch a.device
-    where a.user.id = :userId
-    order by a.assignedAt desc
-""")
-    List<DeviceAssignment> findByUserIdOrderByAssignedAtDesc(
-            @Param("userId") UUID userId
     );
 
 }

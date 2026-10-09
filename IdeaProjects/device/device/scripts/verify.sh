@@ -38,22 +38,27 @@ compile_backend() {
     bash ./mvnw -DskipTests compile
 }
 
-test_password_reset_backend() {
-    local test_classes
-    test_classes="PasswordResetServiceImplTest,AuthenticationimplTest,JwtTokenVersionValidatorTest,AuthenticationControllerSecurityTest"
-
+run_backend_tests() {
     local agent_jar=""
     local agent_root="${HOME}/.m2/repository/net/bytebuddy/byte-buddy-agent"
+    local -a maven_args=("$@")
 
     if [[ -d "${agent_root}" ]]; then
         agent_jar="$(find "${agent_root}" -type f -name 'byte-buddy-agent-*.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' -print | sort -V | tail -n 1)"
     fi
 
     if [[ -n "${agent_jar}" ]]; then
-        bash ./mvnw "-DargLine=-javaagent:${agent_jar}" "-Dtest=${test_classes}" test
-    else
-        bash ./mvnw "-Dtest=${test_classes}" test
+        maven_args=("-DargLine=-javaagent:${agent_jar}" "${maven_args[@]}")
     fi
+
+    bash ./mvnw "${maven_args[@]}" test
+}
+
+test_password_reset_backend() {
+    local test_classes
+    test_classes="PasswordResetServiceImplTest,AuthenticationimplTest,JwtTokenVersionValidatorTest,AuthenticationControllerSecurityTest"
+
+    run_backend_tests "-Dtest=${test_classes}"
 }
 
 check_frontend() {
@@ -98,9 +103,11 @@ test_isolated_backend() {
         return 1
     fi
 
-    env -u DB_URL -u DB_USERNAME -u DB_PASSWORD \
-        -u SPRING_DATASOURCE_URL -u SPRING_DATASOURCE_USERNAME -u SPRING_DATASOURCE_PASSWORD \
-        bash ./mvnw test
+    (
+        unset DB_URL DB_USERNAME DB_PASSWORD
+        unset SPRING_DATASOURCE_URL SPRING_DATASOURCE_USERNAME SPRING_DATASOURCE_PASSWORD
+        run_backend_tests
+    )
 }
 
 show_usage() {

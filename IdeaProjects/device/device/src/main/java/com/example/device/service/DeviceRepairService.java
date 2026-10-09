@@ -4,8 +4,9 @@ import com.example.device.dto.request.RepairCompleteRequest;
 import com.example.device.dto.request.RepairCreationRequest;
 import com.example.device.dto.request.RepairUnrepairableRequest;
 import com.example.device.dto.response.RepairResponse;
+import com.example.device.dto.response.PageResult;
+import com.example.device.enums.RepairStatus;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface DeviceRepairService {
@@ -20,7 +21,18 @@ public interface DeviceRepairService {
 
     RepairResponse getRepair(UUID repairId);
 
-    List<RepairResponse> getRepairs();
+    PageResult<RepairResponse> getRepairs(
+            RepairStatus status,
+            UUID deviceId,
+            int page,
+            int size,
+            String sort
+    );
 
-    List<RepairResponse> getRepairsByDevice(UUID deviceId);
+    PageResult<RepairResponse> getRepairsByDevice(
+            UUID deviceId,
+            int page,
+            int size,
+            String sort
+    );
 }

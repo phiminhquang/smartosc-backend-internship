@@ -3,6 +3,7 @@ package com.example.device.controller;
 import com.example.device.dto.request.UserCreationRequest;
 import com.example.device.dto.request.UserUpdateRequest;
 import com.example.device.dto.response.ApiResponse;
+import com.example.device.dto.response.PageResult;
 import com.example.device.dto.response.UserCreationResponse;
 import com.example.device.service.AssignmentService;
 import com.example.device.service.UserService;
@@ -11,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -33,9 +33,15 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<List<UserCreationResponse>> getUsers() {
-        return ApiResponse.<List<UserCreationResponse>>builder()
-                .result(userService.getUsers())
+    public ApiResponse<PageResult<UserCreationResponse>> getUsers(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String role,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
+    ) {
+        return ApiResponse.<PageResult<UserCreationResponse>>builder()
+                .result(userService.getUsers(keyword, role, page, size, sort))
                 .build();
     }
 

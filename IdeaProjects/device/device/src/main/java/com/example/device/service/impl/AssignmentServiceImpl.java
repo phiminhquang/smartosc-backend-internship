@@ -5,6 +5,7 @@ import com.example.device.dto.request.ReturnDeviceRequest;
 import com.example.device.dto.request.UserCreationRequest;
 import com.example.device.dto.response.AssignmentResponse;
 import com.example.device.dto.response.DeviceAssignmentResponse;
+import com.example.device.dto.response.PageResult;
 import com.example.device.enums.DeviceAssignmentStatus;
 import com.example.device.enums.DeviceReturnCondition;
 import com.example.device.enums.DeviceState;
@@ -19,12 +20,17 @@ import com.example.device.repository.DeviceRepository;
 import com.example.device.repository.UserRepository;
 import com.example.device.service.AssignmentService;
 import com.example.device.service.EmailService;
+import com.example.device.service.PaginationSupport;
+import com.example.device.specification.DeviceAssignmentSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -38,6 +44,13 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AssignmentServiceImpl implements AssignmentService {
+
+    private static final Map<String, String> ASSIGNMENT_SORTS = Map.of(
+            "assignedAt", "assignedAt",
+            "expectedReturnAt", "expectedReturnAt",
+            "returnedAt", "returnedAt",
+            "status", "status"
+    );
 
     private static final List<DeviceAssignmentStatus> OPEN_STATUSES =
             List.of(DeviceAssignmentStatus.ACTIVE, DeviceAssignmentStatus.OVERDUE);
@@ -202,30 +215,39 @@ public class AssignmentServiceImpl implements AssignmentService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DeviceAssignmentResponse> getAssignments() {
-        return deviceAssignmentRepository.findAllWithUserAndDevice()
-                .stream()
-                .map(deviceAssignmentMapper::toResponse)
-                .toList();
+    public PageResult<DeviceAssignmentResponse> getAssignments(
+            DeviceAssignmentStatus status,
+            UUID userId,
+            UUID deviceId,
+            int page,
+            int size,
+            String sort
+    ) {
+        Specification<DeviceAssignment> specification = Specification.allOf(
+                DeviceAssignmentSpecification.hasStatus(status),
+                DeviceAssignmentSpecification.hasUserId(userId),
+                DeviceAssignmentSpecification.hasDeviceId(deviceId)
+        );
+        return findAssignments(specification, page, size, sort);
     }
 
     @Override
-    public List<DeviceAssignmentResponse> getAssignmentsByUser(UUID userId) {
+    @Transactional(readOnly = true)
+    public PageResult<DeviceAssignmentResponse> getAssignmentsByUser(
+            UUID userId,
+            int page,
+            int size,
+            String sort
+    ) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        return deviceAssignmentRepository.findByUserIdOrderByAssignedAtDesc(userId)
-                .stream()
-                .map(deviceAssignmentMapper::toResponse)
-                .toList();
-    }
-
-    @Override
-    public List<DeviceAssignmentResponse> getAssignmentsByStatus(DeviceAssignmentStatus status) {
-        return deviceAssignmentRepository.findByStatusWithDetails(status)
-                .stream()
-                .map(deviceAssignmentMapper::toResponse)
-                .toList();
+        return findAssignments(
+                DeviceAssignmentSpecification.hasUserId(userId),
+                page,
+                size,
+                sort
+        );
     }
 
     @Override
@@ -283,12 +305,31 @@ public class AssignmentServiceImpl implements AssignmentService {
     }
 
     @Override
-    public List<DeviceAssignmentResponse> getMyAssignments() {
-        return deviceAssignmentRepository
-                .findByUser_EmailOrderByAssignedAtDesc(getCurrentUserEmail())
-                .stream()
-                .map(deviceAssignmentMapper::toResponse)
-                .toList();
+    @Transactional(readOnly = true)
+    public PageResult<DeviceAssignmentResponse> getMyAssignments(
+            int page,
+            int size,
+            String sort
+    ) {
+        return findAssignments(
+                DeviceAssignmentSpecification.hasUserEmail(getCurrentUserEmail()),
+                page,
+                size,
+                sort
+        );
+    }
+
+    private PageResult<DeviceAssignmentResponse> findAssignments(
+            Specification<DeviceAssignment> specification,
+            int page,
+            int size,
+            String sort
+    ) {
+        Pageable pageable = PaginationSupport.pageRequest(
+                page, size, sort, ASSIGNMENT_SORTS, "assignedAt", Sort.Direction.DESC
+        );
+        return PageResult.from(deviceAssignmentRepository.findAll(specification, pageable)
+                .map(deviceAssignmentMapper::toResponse));
     }
 
     private String getCurrentUserEmail() {

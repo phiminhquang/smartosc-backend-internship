@@ -5,6 +5,8 @@ import com.example.device.dto.request.RepairCreationRequest;
 import com.example.device.dto.request.RepairUnrepairableRequest;
 import com.example.device.dto.response.ApiResponse;
 import com.example.device.dto.response.RepairResponse;
+import com.example.device.dto.response.PageResult;
+import com.example.device.enums.RepairStatus;
 import com.example.device.service.DeviceRepairService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -60,9 +61,15 @@ public class DeviceRepairController {
     }
 
     @GetMapping
-    public ApiResponse<List<RepairResponse>> getRepairs() {
-        return ApiResponse.<List<RepairResponse>>builder()
-                .result(repairService.getRepairs())
+    public ApiResponse<PageResult<RepairResponse>> getRepairs(
+            @RequestParam(required = false) RepairStatus status,
+            @RequestParam(required = false) UUID deviceId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
+    ) {
+        return ApiResponse.<PageResult<RepairResponse>>builder()
+                .result(repairService.getRepairs(status, deviceId, page, size, sort))
                 .build();
     }
 
@@ -74,9 +81,14 @@ public class DeviceRepairController {
     }
 
     @GetMapping("/device/{deviceId}")
-    public ApiResponse<List<RepairResponse>> getRepairsByDevice(@PathVariable UUID deviceId) {
-        return ApiResponse.<List<RepairResponse>>builder()
-                .result(repairService.getRepairsByDevice(deviceId))
+    public ApiResponse<PageResult<RepairResponse>> getRepairsByDevice(
+            @PathVariable UUID deviceId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
+    ) {
+        return ApiResponse.<PageResult<RepairResponse>>builder()
+                .result(repairService.getRepairsByDevice(deviceId, page, size, sort))
                 .build();
     }
 }

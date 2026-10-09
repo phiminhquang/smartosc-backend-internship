@@ -3,6 +3,7 @@ package com.example.device.service.impl;
 import com.example.device.dto.request.ExtensionRequestCreationRequest;
 import com.example.device.dto.request.ExtensionReviewRequest;
 import com.example.device.dto.response.ExtensionResponse;
+import com.example.device.dto.response.PageResult;
 import com.example.device.enums.DeviceAssignmentStatus;
 import com.example.device.enums.ExtensionRequestStatus;
 import com.example.device.exception.AppException;
@@ -16,19 +17,36 @@ import com.example.device.repository.DeviceAssignmentRepository;
 import com.example.device.repository.UserRepository;
 import com.example.device.service.AssignmentExtensionService;
 import com.example.device.service.EmailService;
+import com.example.device.service.PaginationSupport;
+import com.example.device.specification.AssignmentExtensionSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class AssignmentExtensionServiceImpl implements AssignmentExtensionService {
+
+    private static final Map<String, String> EXTENSION_SORTS = Map.of(
+            "requestedAt", "requestedAt",
+            "requestedReturnAt", "requestedReturnAt",
+            "reviewedAt", "reviewedAt",
+            "status", "status"
+    );
+    private static final Map<String, String> PENDING_EXTENSION_SORTS = Map.of(
+            "requestedAt", "requestedAt",
+            "requestedReturnAt", "requestedReturnAt"
+    );
 
     private final AssignmentExtensionRepository extensionRepository;
     private final DeviceAssignmentRepository assignmentRepository;
@@ -77,12 +95,22 @@ public class AssignmentExtensionServiceImpl implements AssignmentExtensionServic
     }
 
     @Override
-    public List<ExtensionResponse> getMyRequests() {
-        return extensionRepository
-                .findByRequestedByOrderByRequestedAtDesc(getCurrentUser().getEmail())
-                .stream()
-                .map(extensionMapper::toResponse)
-                .toList();
+    @Transactional(readOnly = true)
+    public PageResult<ExtensionResponse> getMyRequests(
+            ExtensionRequestStatus status,
+            int page,
+            int size,
+            String sort
+    ) {
+        Pageable pageable = PaginationSupport.pageRequest(
+                page, size, sort, EXTENSION_SORTS, "requestedAt", Sort.Direction.DESC
+        );
+        Specification<AssignmentExtension> specification = Specification.allOf(
+                AssignmentExtensionSpecification.wasRequestedBy(getCurrentUser().getEmail()),
+                AssignmentExtensionSpecification.hasStatus(status)
+        );
+        return PageResult.from(extensionRepository.findAll(specification, pageable)
+                .map(extensionMapper::toResponse));
     }
 
     @Override
@@ -135,12 +163,19 @@ public class AssignmentExtensionServiceImpl implements AssignmentExtensionServic
     }
 
     @Override
-    public List<ExtensionResponse> getPendingRequests() {
-        return extensionRepository
-                .findByStatusOrderByRequestedAtAsc(ExtensionRequestStatus.PENDING)
-                .stream()
-                .map(extensionMapper::toResponse)
-                .toList();
+    @Transactional(readOnly = true)
+    public PageResult<ExtensionResponse> getPendingRequests(
+            int page,
+            int size,
+            String sort
+    ) {
+        Pageable pageable = PaginationSupport.pageRequest(
+                page, size, sort, PENDING_EXTENSION_SORTS, "requestedAt", Sort.Direction.ASC
+        );
+        return PageResult.from(extensionRepository.findAll(
+                        AssignmentExtensionSpecification.hasStatus(ExtensionRequestStatus.PENDING),
+                        pageable)
+                .map(extensionMapper::toResponse));
     }
 
     private LockedExtension getPendingRequestForUpdate(UUID requestId) {

@@ -17,10 +17,10 @@ import com.example.device.repository.DeviceRepairRepository;
 import com.example.device.repository.DeviceRepository;
 import com.example.device.service.DeviceSerialNumberGenerator;
 import com.example.device.service.DeviceService;
+import com.example.device.service.PaginationSupport;
 import com.example.device.specification.DeviceSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -154,12 +155,19 @@ public class DeviceServiceImpl implements DeviceService {
             int size) {
 
         Specification<Device> spec = Specification.allOf(
-                DeviceSpecification.hasKeyword(keyword),
+                DeviceSpecification.hasKeyword(PaginationSupport.normalizeKeyword(keyword)),
                 DeviceSpecification.hasState(state),
                 DeviceSpecification.hasCategory(category)
         );
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("name").ascending());
+        Pageable pageable = PaginationSupport.pageRequest(
+                page,
+                size,
+                null,
+                Map.of("name", "name"),
+                "name",
+                Sort.Direction.ASC
+        );
 
         return deviceRepository.findAll(spec, pageable)
                 .map(deviceMapper::toDeviceResponse);

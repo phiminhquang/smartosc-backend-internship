@@ -11,7 +11,7 @@
 - `bash scripts/verify.sh safe` và `bash scripts/verify.sh integration` được chạy lại ngày 2026-10-08 lúc 13:55-13:58 +07: safe đạt toàn bộ, integration đạt 31/31 test trên MySQL Testcontainers.
 - MySQL integration, Flyway V1/V2, full Compose frontend/backend/MySQL/Mailpit và Playwright Chromium browser E2E đã đạt local.
 - PR #1 đã merge vào `main` tại `f5eef03`; post-merge `safe`, `integration` và `compose-smoke` đều xanh.
-- Branch hiện tại cho Giai đoạn 2 là `feature/pagination-data-scale`. PRD-201 đã có contract proposed; PRD-202 đang chờ người dùng duyệt trước khi implement.
+- Branch hiện tại cho Giai đoạn 2 là `feature/pagination-data-scale`. PRD-201 đến PRD-205 đã hoàn tất; bước backend tiếp theo là PRD-206/207/208 và chỉ thêm index sau benchmark PRD-209.
 - Chưa sẵn sàng public production vì PR-207/208/209 trong `tasks.md` còn mở.
 - Phân công mặc định và ranh giới chỉnh sửa tuân theo `AGENTS.md`; hiện không có ngoại lệ đang hoạt động.
 
@@ -163,4 +163,14 @@
 - Codebase graph và source review xác nhận tám endpoint collection ở users, assignments, repairs và extension requests đang trả `List`; frontend chưa gọi các endpoint này.
 - PRD-201 đã ghi contract proposed trong `specs/production-readiness/spec.md`, gồm page/size, response ổn định, filter/sort allow-list, error contract, tương thích và nguyên tắc query/index.
 - Video tham khảo được chuyển lời bằng Groq Whisper sau khi hai nguồn caption trả rỗng. Các ý deep offset, deterministic sort, `EXPLAIN` và page-ID deferred join chỉ được dùng làm giả thuyết cho benchmark, không phải bằng chứng hiệu năng của Device.
-- Blocker hiện tại là PRD-202 `[Owner: User]`: duyệt breaking response và xác nhận không tạo màn hình frontend mới ở Giai đoạn 2 trước khi Codex implement PRD-203.
+- Blocker PRD-202 tại mốc khởi động đã được người dùng gỡ ngày 2026-10-09; trạng thái triển khai mới nhất nằm ở mục kế tiếp.
+
+## Phân trang backend PRD-202 đến PRD-205 ngày 2026-10-09
+
+- Người dùng đã duyệt breaking response cho tám endpoint và xác nhận không tạo màn hình frontend mới; PRD-202 hoàn tất.
+- Thêm `PageResult`, validation chung, sort allow-list + `id` tie-breaker và filter theo contract cho users, assignments, repairs và extension requests. Devices giữ response cũ nhưng dùng chung giới hạn page/size và keyword.
+- Users phân trang trước rồi fetch roles theo ID để không page trên collection fetch join; các collection to-one dùng specification + entity graph.
+- Input sai trả HTTP 400/code 1055. `PaginationApiIntegrationTest` bao phủ page boundary, filter/sort, tám endpoint và input lỗi trên MySQL 8.4.11 Testcontainers.
+- `bash scripts/verify.sh integration` đạt 34/34 test, Flyway V1/V2 đạt. `scripts/verify.sh` dùng Byte Buddy javaagent từ Maven cache cho cả targeted và full integration khi có.
+- Frontend và `.env` không bị sửa. PRD-205 đóng N/A vì frontend hiện không tiêu thụ tám endpoint này.
+- Bước tiếp theo: PRD-206 thiết kế import/export lớn và PRD-207 tạo data generator an toàn; chưa thêm migration index trước baseline PRD-208.

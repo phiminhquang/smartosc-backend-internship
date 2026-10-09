@@ -3,9 +3,9 @@ package com.example.device.service;
 import com.example.device.dto.request.DeviceAssignmentRequest;
 import com.example.device.dto.request.ReturnDeviceRequest;
 import com.example.device.dto.response.DeviceAssignmentResponse;
+import com.example.device.dto.response.PageResult;
 import com.example.device.enums.DeviceAssignmentStatus;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface AssignmentService {
@@ -16,13 +16,27 @@ public interface AssignmentService {
 
     DeviceAssignmentResponse getAssignment(UUID assignmentId);
 
-    List<DeviceAssignmentResponse> getAssignments();
+    PageResult<DeviceAssignmentResponse> getAssignments(
+            DeviceAssignmentStatus status,
+            UUID userId,
+            UUID deviceId,
+            int page,
+            int size,
+            String sort
+    );
 
-    List<DeviceAssignmentResponse> getAssignmentsByUser(UUID userId);
+    PageResult<DeviceAssignmentResponse> getAssignmentsByUser(
+            UUID userId,
+            int page,
+            int size,
+            String sort
+    );
 
-    List<DeviceAssignmentResponse> getAssignmentsByStatus(DeviceAssignmentStatus status);
-
-    List<DeviceAssignmentResponse> getMyAssignments();
+    PageResult<DeviceAssignmentResponse> getMyAssignments(
+            int page,
+            int size,
+            String sort
+    );
 
     int updateOverdueAssignments();
 

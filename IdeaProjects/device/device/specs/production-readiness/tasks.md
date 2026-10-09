@@ -61,11 +61,11 @@
 
 ## Giai đoạn 2 — Phân trang, dữ liệu lớn và import/export
 
-- [x] PRD-201 `[Owner: Codex] [AI thực hiện]` Bổ sung API contract phân trang/filter/sort cho users, assignments, repairs và extension requests. Contract proposed đã ghi trong `spec.md` ngày 2026-10-09; chưa implement trước PRD-202.
-- [ ] PRD-202 `[Owner: User] [AI hướng dẫn]` Duyệt contract breaking/change và phạm vi màn hình frontend. Phụ thuộc: PRD-201.
-- [ ] PRD-203 `[Owner: Codex] [AI thực hiện]` Implement phân trang/validation/allow-list ở controller-service-repository. Phụ thuộc: PRD-202.
-- [ ] PRD-204 `[Owner: Codex] [AI thực hiện]` Viết integration test cho page boundary, filter, sort và giới hạn size.
-- [ ] PRD-205 `[Owner: Antigravity] [AI thực hiện]` Cập nhật type/service/component đang dùng contract mới. Phụ thuộc: PRD-203 và backend contract ổn định.
+- [x] PRD-201 `[Owner: Codex] [AI thực hiện]` Bổ sung API contract phân trang/filter/sort cho users, assignments, repairs và extension requests. Contract đã được duyệt ngày 2026-10-09.
+- [x] PRD-202 `[Owner: User] [AI hướng dẫn]` Người dùng duyệt breaking response cho tám endpoint và xác nhận chưa tạo màn hình frontend mới ngày 2026-10-09. Phụ thuộc: PRD-201.
+- [x] PRD-203 `[Owner: Codex] [AI thực hiện]` Implement `PageResult`, validation/allow-list, deterministic sort và filter ở controller-service-repository; devices dùng chung validation `page/size`.
+- [x] PRD-204 `[Owner: Codex] [AI thực hiện]` Integration test MySQL cho page boundary, tám endpoint, filter, sort, giới hạn size và input lỗi; full suite đạt 34/34 test.
+- [x] PRD-205 `[Owner: Antigravity] [AI thực hiện]` Đóng N/A: audit xác nhận frontend hiện chỉ gọi devices và không tiêu thụ tám endpoint breaking; phạm vi đã duyệt không tạo màn hình mới nên không sửa `frontend/`.
 - [ ] PRD-206 `[Owner: Codex] [AI thực hiện]` Thiết kế và implement export/import theo batch/stream hoặc background job dựa trên phép đo.
 - [ ] PRD-207 `[Owner: Codex] [AI thực hiện]` Tạo data generator an toàn cho test; không đọc/ghi production.
 - [ ] PRD-208 `[Owner: Codex] [AI thực hiện]` Thu baseline query/heap/latency trên dataset đã ghi cấu hình.
@@ -75,10 +75,10 @@
 
 ### Gate G2
 
-- [ ] G2-1 Collection lớn đã phân trang hoặc có ngoại lệ được duyệt.
+- [x] G2-1 Collection lớn trong phạm vi PRD-201 đã phân trang; devices giữ contract hiện tại nhưng có validation chung.
 - [ ] G2-2 Import/export không bắt buộc nạp toàn bộ dữ liệu lớn vào bộ nhớ.
 - [ ] G2-3 Index có bằng chứng query plan và đo trước/sau.
-- [ ] G2-4 Frontend tương thích contract mới.
+- [x] G2-4 Frontend không tiêu thụ tám endpoint breaking và tiếp tục dùng contract devices không đổi.
 
 ## Giai đoạn 3 — Request đồng thời và tính đúng đắn dữ liệu
 

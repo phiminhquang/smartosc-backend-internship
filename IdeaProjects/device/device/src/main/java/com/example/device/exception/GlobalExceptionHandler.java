@@ -7,6 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.example.device.dto.response.ApiResponse;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -40,6 +41,21 @@ public  ResponseEntity<ApiResponse<Void>> handleAppexception(AppException except
             errorCode = ErrorCode.INVALID_KEY;
         }
 
+        ApiResponse<Void> response = ApiResponse.<Void>builder()
+                .code(errorCode.getCode())
+                .message(errorCode.getMessage())
+                .build();
+
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(
+            MethodArgumentTypeMismatchException exception
+    ) {
+        ErrorCode errorCode = ErrorCode.INVALID_PAGINATION_REQUEST;
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .code(errorCode.getCode())
                 .message(errorCode.getMessage())

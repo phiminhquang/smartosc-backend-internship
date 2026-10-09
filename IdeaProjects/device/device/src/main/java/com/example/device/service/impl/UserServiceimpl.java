@@ -3,6 +3,7 @@ package com.example.device.service.impl;
 import com.example.device.dto.request.UserCreationRequest;
 import com.example.device.dto.request.UserUpdateRequest;
 import com.example.device.dto.response.UserCreationResponse;
+import com.example.device.dto.response.PageResult;
 import com.example.device.exception.AppException;
 import com.example.device.exception.ErrorCode;
 import com.example.device.mapper.UserMapper;
@@ -12,19 +13,35 @@ import com.example.device.repository.DeviceAssignmentRepository;
 import com.example.device.repository.RoleRepository;
 import com.example.device.repository.UserRepository;
 import com.example.device.service.UserService;
+import com.example.device.service.PaginationSupport;
+import com.example.device.specification.UserSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceimpl implements UserService {
+
+    private static final Map<String, String> USER_SORTS = Map.of(
+            "name", "name",
+            "email", "email"
+    );
+    private static final Set<String> USER_ROLES = Set.of("ADMIN", "IT_STAFF", "EMPLOYEE");
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -57,11 +74,37 @@ public class UserServiceimpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserCreationResponse> getUsers() {
-        return userRepository.findAllWithRoles()
-                .stream()
-                .map(userMapper::toUserResponse)
+    public PageResult<UserCreationResponse> getUsers(
+            String keyword,
+            String role,
+            int page,
+            int size,
+            String sort
+    ) {
+        String normalizedKeyword = PaginationSupport.normalizeKeyword(keyword);
+        PaginationSupport.requireAllowedValue(role, USER_ROLES);
+        Pageable pageable = PaginationSupport.pageRequest(
+                page, size, sort, USER_SORTS, "name", Sort.Direction.ASC
+        );
+        Specification<User> specification = Specification.allOf(
+                UserSpecification.hasKeyword(normalizedKeyword),
+                UserSpecification.hasRole(role)
+        );
+
+        Page<User> userPage = userRepository.findAll(specification, pageable);
+        if (userPage.isEmpty()) {
+            return PageResult.from(userPage.map(userMapper::toUserResponse));
+        }
+
+        List<UUID> userIds = userPage.getContent().stream()
+                .map(User::getId)
                 .toList();
+        Map<UUID, User> usersWithRoles = userRepository.findAllWithRolesByIdIn(userIds)
+                .stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        return PageResult.from(userPage.map(user ->
+                userMapper.toUserResponse(usersWithRoles.getOrDefault(user.getId(), user))));
     }
 
     @Override

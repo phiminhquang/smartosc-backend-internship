@@ -4,6 +4,7 @@ import com.example.device.dto.request.DeviceAssignmentRequest;
 import com.example.device.dto.request.ReturnDeviceRequest;
 import com.example.device.dto.response.ApiResponse;
 import com.example.device.dto.response.DeviceAssignmentResponse;
+import com.example.device.dto.response.PageResult;
 import com.example.device.enums.DeviceAssignmentStatus;
 import com.example.device.service.AssignmentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -46,9 +46,13 @@ public class AssignmentController {
 
     @GetMapping("/me")
     @PreAuthorize("hasRole('EMPLOYEE')")
-    public ApiResponse<List<DeviceAssignmentResponse>> getMyAssignments() {
-        return ApiResponse.<List<DeviceAssignmentResponse>>builder()
-                .result(assignmentService.getMyAssignments())
+    public ApiResponse<PageResult<DeviceAssignmentResponse>> getMyAssignments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
+    ) {
+        return ApiResponse.<PageResult<DeviceAssignmentResponse>>builder()
+                .result(assignmentService.getMyAssignments(page, size, sort))
                 .build();
     }
 
@@ -63,24 +67,29 @@ public class AssignmentController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'IT_STAFF')")
-    public ApiResponse<List<DeviceAssignmentResponse>> getAssignments(
-            @RequestParam(required = false) DeviceAssignmentStatus status) {
-
-        List<DeviceAssignmentResponse> result = status == null
-                ? assignmentService.getAssignments()
-                : assignmentService.getAssignmentsByStatus(status);
-
-        return ApiResponse.<List<DeviceAssignmentResponse>>builder()
-                .result(result)
+    public ApiResponse<PageResult<DeviceAssignmentResponse>> getAssignments(
+            @RequestParam(required = false) DeviceAssignmentStatus status,
+            @RequestParam(required = false) UUID userId,
+            @RequestParam(required = false) UUID deviceId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
+    ) {
+        return ApiResponse.<PageResult<DeviceAssignmentResponse>>builder()
+                .result(assignmentService.getAssignments(status, userId, deviceId, page, size, sort))
                 .build();
     }
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'IT_STAFF')")
-    public ApiResponse<List<DeviceAssignmentResponse>> getAssignmentsByUser(
-            @PathVariable UUID userId) {
-        return ApiResponse.<List<DeviceAssignmentResponse>>builder()
-                .result(assignmentService.getAssignmentsByUser(userId))
+    public ApiResponse<PageResult<DeviceAssignmentResponse>> getAssignmentsByUser(
+            @PathVariable UUID userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String sort
+    ) {
+        return ApiResponse.<PageResult<DeviceAssignmentResponse>>builder()
+                .result(assignmentService.getAssignmentsByUser(userId, page, size, sort))
                 .build();
     }
 }

@@ -4,6 +4,7 @@ import com.example.device.dto.request.RepairCompleteRequest;
 import com.example.device.dto.request.RepairCreationRequest;
 import com.example.device.dto.request.RepairUnrepairableRequest;
 import com.example.device.dto.response.RepairResponse;
+import com.example.device.dto.response.PageResult;
 import com.example.device.enums.DeviceState;
 import com.example.device.enums.RepairStatus;
 import com.example.device.exception.AppException;
@@ -14,18 +15,32 @@ import com.example.device.model.DeviceRepair;
 import com.example.device.repository.DeviceRepairRepository;
 import com.example.device.repository.DeviceRepository;
 import com.example.device.service.DeviceRepairService;
+import com.example.device.service.PaginationSupport;
+import com.example.device.specification.DeviceRepairSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class DeviceRepairServiceImpl implements DeviceRepairService {
+
+    private static final Map<String, String> REPAIR_SORTS = Map.of(
+            "createdAt", "createdAt",
+            "startedAt", "startedAt",
+            "finishedAt", "finishedAt",
+            "status", "status",
+            "cost", "cost"
+    );
 
     private static final List<RepairStatus> OPEN_STATUSES =
             List.of(RepairStatus.PENDING, RepairStatus.IN_PROGRESS);
@@ -134,24 +149,46 @@ public class DeviceRepairServiceImpl implements DeviceRepairService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<RepairResponse> getRepairs() {
-        return repairRepository.findAllByOrderByCreatedAtDesc()
-                .stream()
-                .map(repairMapper::toResponse)
-                .toList();
+    public PageResult<RepairResponse> getRepairs(
+            RepairStatus status,
+            UUID deviceId,
+            int page,
+            int size,
+            String sort
+    ) {
+        Specification<DeviceRepair> specification = Specification.allOf(
+                DeviceRepairSpecification.hasStatus(status),
+                DeviceRepairSpecification.hasDeviceId(deviceId)
+        );
+        return findRepairs(specification, page, size, sort);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<RepairResponse> getRepairsByDevice(UUID deviceId) {
+    public PageResult<RepairResponse> getRepairsByDevice(
+            UUID deviceId,
+            int page,
+            int size,
+            String sort
+    ) {
         if (!deviceRepository.existsById(deviceId)) {
             throw new AppException(ErrorCode.DEVICE_NOT_FOUND);
         }
 
-        return repairRepository.findByDeviceIdOrderByCreatedAtDesc(deviceId)
-                .stream()
-                .map(repairMapper::toResponse)
-                .toList();
+        return findRepairs(DeviceRepairSpecification.hasDeviceId(deviceId), page, size, sort);
+    }
+
+    private PageResult<RepairResponse> findRepairs(
+            Specification<DeviceRepair> specification,
+            int page,
+            int size,
+            String sort
+    ) {
+        Pageable pageable = PaginationSupport.pageRequest(
+                page, size, sort, REPAIR_SORTS, "createdAt", Sort.Direction.DESC
+        );
+        return PageResult.from(repairRepository.findAll(specification, pageable)
+                .map(repairMapper::toResponse));
     }
 
     private DeviceRepair getRepairEntity(UUID repairId) {

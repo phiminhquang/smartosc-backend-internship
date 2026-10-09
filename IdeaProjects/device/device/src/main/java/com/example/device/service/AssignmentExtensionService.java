@@ -3,8 +3,9 @@ package com.example.device.service;
 import com.example.device.dto.request.ExtensionRequestCreationRequest;
 import com.example.device.dto.request.ExtensionReviewRequest;
 import com.example.device.dto.response.ExtensionResponse;
+import com.example.device.dto.response.PageResult;
+import com.example.device.enums.ExtensionRequestStatus;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface AssignmentExtensionService {
@@ -15,7 +16,16 @@ public interface AssignmentExtensionService {
 
     ExtensionResponse rejectRequest(UUID requestId, ExtensionReviewRequest request);
 
-    List<ExtensionResponse> getPendingRequests();
+    PageResult<ExtensionResponse> getPendingRequests(
+            int page,
+            int size,
+            String sort
+    );
 
-    List<ExtensionResponse> getMyRequests();
+    PageResult<ExtensionResponse> getMyRequests(
+            ExtensionRequestStatus status,
+            int page,
+            int size,
+            String sort
+    );
 }

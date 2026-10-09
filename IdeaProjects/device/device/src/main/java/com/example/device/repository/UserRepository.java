@@ -1,6 +1,7 @@
 package com.example.device.repository;
 
 import com.example.device.model.User;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -14,7 +15,7 @@ import java.util.UUID;
 import jakarta.persistence.LockModeType;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
+public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
 
     Optional<User> findByEmail(String email);
 
@@ -52,7 +53,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("""
     select distinct u from User u
     left join fetch u.roles
+    where u.id in :ids
 """)
-    List<User> findAllWithRoles();
+    List<User> findAllWithRolesByIdIn(@Param("ids") List<UUID> ids);
 
 }

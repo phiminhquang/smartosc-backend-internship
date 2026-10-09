@@ -111,7 +111,7 @@ Project có đủ nghiệp vụ để trình diễn nhưng chưa chứng minh đ
 
 ## Hợp đồng API phân trang Giai đoạn 2 (PRD-201)
 
-Trạng thái: **Proposed — chờ người dùng duyệt PRD-202 trước khi implement**.
+Trạng thái: **Approved — người dùng duyệt PRD-202 ngày 2026-10-09 sau khi xác nhận đây là phần mở rộng phân trang từ devices sang users/assignments/repairs/extension requests và không tạo màn hình frontend mới**.
 
 ### Quy ước chung
 
@@ -120,7 +120,7 @@ Trạng thái: **Proposed — chờ người dùng duyệt PRD-202 trước khi 
 - `sort` có dạng `field,direction`, ví dụ `sort=assignedAt,desc`; chỉ chấp nhận một field trong allow-list của endpoint và `asc` hoặc `desc`.
 - Backend luôn thêm `id` làm khóa sắp xếp phụ để kết quả ổn định khi field chính trùng nhau. Khóa phụ không cần truyền từ client.
 - Chuỗi tìm kiếm được trim, bỏ qua hoa/thường và dài tối đa 100 ký tự. Enum dùng đúng giá trị đã công bố; UUID phải hợp lệ.
-- `page < 0`, `size < 1`, `size > 100`, sort/filter/UUID không hợp lệ trả HTTP `400`, dự kiến code ứng dụng `1055` với thông điệp trung lập `Tham số phân trang, lọc hoặc sắp xếp không hợp lệ`.
+- `page < 0`, `size < 1`, `size > 100`, sort/filter/UUID không hợp lệ trả HTTP `400`, code ứng dụng `1055` với thông điệp trung lập `Tham số phân trang, lọc hoặc sắp xếp không hợp lệ`.
 - Response chỉ cam kết các field ổn định dưới đây; không lộ metadata nội bộ của Spring `Pageable`/`Sort`:
 
 ```json
@@ -158,7 +158,7 @@ Trạng thái: **Proposed — chờ người dùng duyệt PRD-202 trước khi 
 
 - Đây là breaking change có chủ ý cho tám endpoint hiện trả `List<T>`; endpoint chi tiết và endpoint ghi dữ liệu không đổi.
 - Frontend hiện chỉ gọi API thiết bị, chưa có service/page cho users, assignments, repairs hoặc extension requests; vì vậy branch backend không sửa `frontend/`.
-- Đề xuất mặc định cho PRD-202: không tạo màn hình quản trị mới trong Giai đoạn 2. Khi có màn hình sản phẩm được duyệt, Antigravity dùng shape trang ổn định ở trên.
+- Phạm vi PRD-202 đã duyệt: không tạo màn hình quản trị mới trong Giai đoạn 2. Khi có màn hình sản phẩm được duyệt, Antigravity dùng shape trang ổn định ở trên.
 
 ### Nguyên tắc truy vấn và bằng chứng
 
