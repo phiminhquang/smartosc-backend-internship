@@ -158,7 +158,8 @@
 ## Khởi động Giai đoạn 2 ngày 2026-10-09
 
 - Tạo branch `feature/pagination-data-scale` từ merge commit `f5eef03`.
-- Cập nhật GitHub Actions từ v4 lên v5 theo cảnh báo runtime Node 20/setup-java deprecated và release notes chính thức; chưa ghi kết quả pass trước khi chạy verification.
+- Cập nhật GitHub Actions từ v4 lên v5 theo cảnh báo runtime Node 20/setup-java deprecated và release notes chính thức. Branch CI run `37901442587` đạt cả `safe`, `integration`, `compose-smoke`; cảnh báo Node 20/setup-java v4 đã biến mất.
+- Ba job được ghim `ubuntu-24.04` sau khi GitHub cảnh báo `ubuntu-latest` sẽ chuyển sang Ubuntu 26 từ 2026-10-19; đang chờ branch CI run cuối xác nhận runner đã ghim.
 - Codebase graph và source review xác nhận tám endpoint collection ở users, assignments, repairs và extension requests đang trả `List`; frontend chưa gọi các endpoint này.
 - PRD-201 đã ghi contract proposed trong `specs/production-readiness/spec.md`, gồm page/size, response ổn định, filter/sort allow-list, error contract, tương thích và nguyên tắc query/index.
 - Video tham khảo được chuyển lời bằng Groq Whisper sau khi hai nguồn caption trả rỗng. Các ý deep offset, deterministic sort, `EXPLAIN` và page-ID deferred join chỉ được dùng làm giả thuyết cho benchmark, không phải bằng chứng hiệu năng của Device.

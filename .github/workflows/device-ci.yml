@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   safe:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: IdeaProjects/device/device
@@ -38,7 +38,7 @@ jobs:
       - run: bash scripts/verify.sh safe
 
   integration:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: IdeaProjects/device/device
@@ -54,7 +54,7 @@ jobs:
 
   compose-smoke:
     needs: [safe, integration]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: IdeaProjects/device/device
