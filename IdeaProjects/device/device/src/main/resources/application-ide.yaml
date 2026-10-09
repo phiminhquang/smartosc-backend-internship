@@ -1,0 +1,32 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    url: jdbc:mysql://127.0.0.1:${LOCAL_DB_PORT:3307}/device_db?sslMode=DISABLED&allowPublicKeyRetrieval=true
+    username: device_app
+    password: ${LOCAL_DB_PASSWORD}
+
+  mail:
+    host: 127.0.0.1
+    port: 1025
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+app:
+  mail:
+    from: no-reply@device.local
+  admin:
+    email: admin@device.local
+    password: ${LOCAL_ADMIN_PASSWORD}
+  password-reset:
+    base-url: http://localhost:5173/reset-password
+
+jwt:
+  signer-key: ${LOCAL_JWT_SIGNER_KEY}

@@ -4,7 +4,7 @@ import type { ApiResponse } from '../types/api'
 export const TOKEN_STORAGE_KEY = 'device_access_token'
 
 export const http = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api',
   headers: {
     'Content-Type': 'application/json',
   },

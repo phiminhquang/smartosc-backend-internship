@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:tc:mysql:8.4:///device_test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: ""
+    password: ""
+  mail:
+    host: 127.0.0.1
+    port: 1
+    username: ""
+    password: ""
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+app:
+  mail:
+    from: no-reply@device.test
+  admin:
+    email: admin@device.test
+    password: ${TEST_ADMIN_PASSWORD}
+  password-reset:
+    base-url: http://127.0.0.1/reset-password
+
+jwt:
+  signer-key: ${TEST_JWT_SIGNER_KEY}

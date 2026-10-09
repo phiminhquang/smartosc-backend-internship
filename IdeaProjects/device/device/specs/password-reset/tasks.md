@@ -2,8 +2,8 @@
 
 ## Trạng thái tổng thể
 
-- Backend: Đã triển khai và qua cổng kiểm tra tự động an toàn; còn kiểm chứng trên database test/staging.
-- Frontend: Đã triển khai, lint/build thành công; còn kiểm thử trình duyệt và E2E.
+- Backend: Đã triển khai, qua cổng an toàn và kiểm chứng trên MySQL Testcontainers/Compose local.
+- Frontend: Đã triển khai; lint/build và Playwright Chromium browser E2E thành công local/GitHub.
 - Phát hành: Chưa sẵn sàng.
 
 ## Phân công
@@ -59,23 +59,23 @@
 
 ## 6. Kiểm chứng tích hợp
 
-- [ ] PR-401 Tạo database test/staging từ V1 và áp dụng migration V2.
-- [ ] PR-402 Cấu hình SMTP test và `PASSWORD_RESET_BASE_URL`.
-- [ ] PR-403 Kiểm tra yêu cầu reset với email tồn tại.
-- [ ] PR-404 Kiểm tra phản hồi trung lập với email không tồn tại.
+- [x] PR-401 Tạo database test/staging từ V1 và áp dụng migration V2.
+- [x] PR-402 Cấu hình SMTP test và `PASSWORD_RESET_BASE_URL`.
+- [x] PR-403 Kiểm tra yêu cầu reset với email tồn tại.
+- [x] PR-404 Kiểm tra phản hồi trung lập với email không tồn tại.
 - [ ] PR-405 Kiểm tra token đúng, sai, hết hạn và dùng lại.
 - [ ] PR-406 Kiểm tra cooldown và yêu cầu đồng thời.
 - [ ] PR-407 Xác nhận JWT cũ bị từ chối sau khi đổi mật khẩu.
-- [ ] PR-408 Kiểm tra mật khẩu cũ thất bại, mật khẩu mới thành công.
-- [ ] PR-409 Kiểm tra toàn bộ luồng trên trình duyệt và email.
-- [ ] PR-410 Xác nhận token biến mất khỏi thanh địa chỉ và không xuất hiện trong referrer.
+- [x] PR-408 Playwright xác nhận mật khẩu cũ thất bại và mật khẩu mới đăng nhập thành công.
+- [x] PR-409 Playwright Chromium chạy toàn bộ luồng DOM qua Mailpit trên full Compose local và GitHub.
+- [x] PR-410 Playwright xác nhận token biến mất khỏi address bar và raw token không xuất hiện trong header `Referer` tiếp theo.
 
 ## 7. Hoàn tất
 
-- [ ] PR-501 Review diff bảo mật và migration.
-- [ ] PR-502 Cập nhật `verification.md` bằng kết quả thật.
-- [ ] PR-503 Cập nhật `AI-HANDOFF.md`.
-- [ ] PR-504 Tạo commit sau khi toàn bộ cổng chất lượng áp dụng đã đạt.
+- [x] PR-501 Review diff bảo mật và migration. Review lại ngày 2026-10-08 xác nhận token chỉ lưu hash, endpoint public đúng phạm vi, JWT có `tokenVersion`, V2 áp dụng thành công trên MySQL cô lập và không có secret production trong cấu hình mới; PR-207/208/209 vẫn là blocker phát hành.
+- [x] PR-502 Cập nhật `verification.md` bằng kết quả thật.
+- [x] PR-503 Cập nhật `AI-HANDOFF.md`.
+- [x] PR-504 Đã tạo branch/commit và PR #1; ba job GitHub CI đạt trên commit `5837be2`.
 
 ## Quy tắc cập nhật
 

@@ -113,5 +113,6 @@ Một tính năng chưa hoàn thành nếu còn thiếu một trong các điều
 - `specs/README.md`: cách chọn mức tài liệu và vòng đời feature.
 - `specs/_template/`: mẫu dùng lại cho đặc tả, kế hoạch, task và kiểm chứng.
 - `specs/<feature>/`: tài liệu và bằng chứng theo từng tính năng.
+- `docs/diagrams/`: sơ đồ luồng trạng thái và tương tác của hệ thống.
 - `docs/decisions/`: các quyết định kiến trúc có ảnh hưởng lâu dài và ADR template.
 - `scripts/verify.sh`: cổng kiểm tra an toàn, có thể lặp lại giữa các agent.
