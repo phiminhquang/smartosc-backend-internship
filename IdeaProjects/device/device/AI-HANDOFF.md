@@ -172,5 +172,6 @@
 - Users phân trang trước rồi fetch roles theo ID để không page trên collection fetch join; các collection to-one dùng specification + entity graph.
 - Input sai trả HTTP 400/code 1055. `PaginationApiIntegrationTest` bao phủ page boundary, filter/sort, tám endpoint và input lỗi trên MySQL 8.4.11 Testcontainers.
 - `bash scripts/verify.sh integration` đạt 34/34 test, Flyway V1/V2 đạt. `scripts/verify.sh` dùng Byte Buddy javaagent từ Maven cache cho cả targeted và full integration khi có.
+- GitHub Device CI run `37904867768` tại commit `ea1de52` đạt đủ `safe`, `integration` và `compose-smoke` trên Ubuntu 24.04.
 - Frontend và `.env` không bị sửa. PRD-205 đóng N/A vì frontend hiện không tiêu thụ tám endpoint này.
 - Bước tiếp theo: PRD-206 thiết kế import/export lớn và PRD-207 tạo data generator an toàn; chưa thêm migration index trước baseline PRD-208.

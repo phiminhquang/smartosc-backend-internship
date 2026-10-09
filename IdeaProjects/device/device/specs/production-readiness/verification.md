@@ -128,6 +128,7 @@
 - `PaginationApiIntegrationTest` chạy qua MockMvc trên MySQL Testcontainers 8.4.11: 3 test đạt, bao phủ trang đầu/cuối, keyword/role/status/user/device filter, sort, tám endpoint, max size và input sai.
 - `bash scripts/verify.sh integration`: exit 0, Flyway V1/V2 áp dụng trên database tạm; 34 test đạt, 0 failure/error/skip. Script integration dùng Byte Buddy javaagent từ Maven cache khi có để Mockito không phụ thuộc cơ chế self-attach của máy chạy.
 - `bash scripts/verify.sh safe`: exit 0 sau implementation; documentation/diff check, backend compile, 15 backend test mục tiêu, 3 frontend contract/security test, lint và build 92 module đều đạt.
+- GitHub Device CI run `37904867768` cho commit implementation `ea1de52` đạt `safe` 32s, `integration` 1m09s và `compose-smoke` 2m00s trên runner `ubuntu-24.04`.
 - Không sửa file trong `frontend/`, không sửa `.env`, không thêm migration/index trước khi có dataset và benchmark PRD-207/208/209.
 
 ## Ma trận tiêu chí chấp nhận
