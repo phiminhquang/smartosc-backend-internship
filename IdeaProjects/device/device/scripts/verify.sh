@@ -95,6 +95,17 @@ test_data_generator() {
     printf '%s\n' 'Synthetic device CSV generator checks passed.'
 }
 
+test_benchmark_guard() {
+    bash scripts/benchmark-device-scale.sh --help >/dev/null
+
+    if bash scripts/benchmark-device-scale.sh >/dev/null 2>&1; then
+        printf '%s\n' 'Device scale benchmark ran without --confirm-isolated.' >&2
+        return 1
+    fi
+
+    printf '%s\n' 'Device scale benchmark isolation guard checks passed.'
+}
+
 check_frontend() {
     (
         cd frontend
@@ -162,6 +173,7 @@ case "${mode}" in
         compile_backend
         test_safe_backend
         test_data_generator
+        test_benchmark_guard
         check_frontend
         ;;
     docs)

@@ -68,7 +68,7 @@
 - [x] PRD-205 `[Owner: Antigravity] [AI thực hiện]` Đóng N/A: audit xác nhận frontend hiện chỉ gọi devices và không tiêu thụ tám endpoint breaking; phạm vi đã duyệt không tạo màn hình mới nên không sửa `frontend/`.
 - [x] PRD-206 `[Owner: Codex] [AI thực hiện]` Export CSV/XLSX stream trực tiếp, đọc MySQL theo keyset batch; import CSV có giới hạn 10 MiB và flush/clear theo batch. Unit test và MySQL integration test đạt.
 - [x] PRD-207 `[Owner: Codex] [AI thực hiện]` Generator CSV tổng hợp chỉ ghi filesystem, giới hạn row và từ chối ghi đè mặc định; không đọc `.env`, không có kết nối database/mạng.
-- [ ] PRD-208 `[Owner: Codex] [AI thực hiện]` Thu baseline query/heap/latency trên dataset đã ghi cấu hình.
+- [x] PRD-208 `[Owner: Codex] [AI thực hiện]` Đã thu baseline import/query/export, peak heap/RSS và `EXPLAIN ANALYZE` trên 1k/10k/100k với máy/JVM/MySQL được ghi; report lưu tại `docs/benchmarks/device-scale-baseline-2026-10-09.md`.
 - [ ] PRD-209 `[Owner: Codex] [AI thực hiện]` Review query plan và thêm migration index tối thiểu có so sánh trước/sau.
 - [ ] PRD-210 `[Owner: User] [AI hướng dẫn]` Chạy kịch bản dữ liệu lớn, lưu kết quả/ảnh và xác nhận giới hạn máy.
 - [ ] PRD-211 `[Owner: Integration]` Chạy backend/frontend checks và ghi báo cáo hiệu năng trung thực.

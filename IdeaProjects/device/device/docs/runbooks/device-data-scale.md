@@ -47,5 +47,41 @@ File 10.000 row phải có 10.001 dòng gồm header. Không commit dataset sinh
 4. Warm-up trước, chạy lặp lại và ghi toàn bộ kết quả thay vì chọn số đẹp nhất.
 5. Không thêm index trước khi lưu query plan và baseline của cùng dataset.
 
-Kịch bản import/benchmark tự động thuộc PRD-208. Generator này không tự import
-để giữ ranh giới an toàn giữa tạo file và thay đổi database.
+## Chạy baseline cô lập
+
+Lệnh mặc định tạo ba dataset tạm, chạy duy nhất `DeviceScaleBenchmarkIT` với
+heap tối đa 512 MiB và MySQL Testcontainers, rồi ghi report Markdown:
+
+```bash
+bash scripts/benchmark-device-scale.sh --confirm-isolated
+```
+
+Report mặc định: `target/benchmarks/device-scale-baseline.md`. Script từ chối
+ghi đè; chỉ thêm `--force` sau khi đã lưu report cần giữ. Có thể chạy smoke nhỏ:
+
+```bash
+bash scripts/benchmark-device-scale.sh \
+  --confirm-isolated \
+  --datasets 1000 \
+  --repetitions 1 \
+  --import-repetitions 1 \
+  --output /tmp/device-scale-smoke.md
+```
+
+- Script bỏ các biến `DB_*` và `SPRING_DATASOURCE_*`; test tiếp tục xác nhận URL
+  cấu hình bắt đầu bằng `jdbc:tc:mysql:` và database là `device_test`.
+- Mặc định read/export warm-up một lần và ghi ba lần; import warm-up hạ tầng
+  bằng dataset nhỏ nhất rồi ghi một lần mỗi mức vì chi phí cao và làm thay đổi
+  dữ liệu cô lập. Report nêu rõ số lần đo, không trình bày một lần import như
+  median nhiều mẫu.
+- Peak heap lấy từ JVM và RSS lấy từ `/proc/self/status` mỗi 10 ms. Số đo này
+  phụ thuộc máy, container cache và sampler; không phải cam kết production.
+- Report có raw result, median read/export và `EXPLAIN ANALYZE` trước index để
+  PRD-209 so sánh cùng môi trường.
+- Dataset tạm bị xóa khi script kết thúc. Generator vẫn không tự import và
+  benchmark không đọc `.env`.
+
+Baseline đã ghi ngày 2026-10-09 nằm tại
+[`docs/benchmarks/device-scale-baseline-2026-10-09.md`](../benchmarks/device-scale-baseline-2026-10-09.md).
+Không dùng số liệu này như cam kết production; PRD-209 phải so sánh trên cùng
+môi trường và dataset trước khi quyết định index.
