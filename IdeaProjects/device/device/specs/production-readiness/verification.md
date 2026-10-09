@@ -2,7 +2,7 @@
 
 ## Trạng thái
 
-- Feature đã `Approved`; Giai đoạn 0 và phần code Giai đoạn 1 đang triển khai. Chưa đạt Gate G1.
+- Feature đã `Approved`; các tiêu chí tự động của Gate G1 đã đạt trên local và GitHub. PRD-110 của người dùng vẫn mở.
 - File này chỉ ghi kết quả đã thực sự chạy. Không suy ra thành công từ kế hoạch hoặc lịch sử chat.
 - Bằng chứng password reset hiện có tiếp tục nằm trong `specs/password-reset/verification.md`; không sao chép hoặc nâng trạng thái tại đây.
 
@@ -27,6 +27,7 @@
 | Frontend build | Chạy bởi `bash scripts/verify.sh safe` | Thành công | TypeScript/Vite, 92 module transformed |
 | Compose local smoke | Build/start + frontend/API/Mailpit | Thành công | 4 service healthy; SPA route/header và API smoke qua Nginx proxy đạt |
 | Browser E2E | `bash scripts/verify.sh frontend-e2e` | Thành công | Playwright Chromium, 1 test pass trong 1.1 phút; điều khiển DOM thật qua full Compose |
+| GitHub Device CI | `safe`, `integration`, `compose-smoke` | Thành công | Push run và PR run của commit `5837be2` đều xanh |
 | Data-scale benchmark | Dataset/máy/lệnh phải được ghi | Chưa chạy | |
 | Concurrent requests | MySQL integration test thật | Chưa chạy | |
 | SMTP failure/recovery | Tắt/bật SMTP test | Chưa chạy | |
@@ -97,6 +98,7 @@
 - Rerun GitHub thứ hai vẫn fail ở riêng lần reset khôi phục tùy chọn, dù full luồng bắt buộc đã qua tới bước từ chối mật khẩu cũ. Mô phỏng CI local bằng Compose project/volume riêng, mật khẩu ngẫu nhiên 64 ký tự và cleanup volume tạm đạt `1 passed (1.1m)`.
 - Test tiếp tục khôi phục mật khẩu cho local DB bền vững, nhưng bỏ reset lần hai khi `CI=true` vì runner dùng database/volume tạm và bị hủy sau job. Luồng CI bắt buộc vẫn giữ login, Mailpit, reset, URL/referrer, mật khẩu mới và từ chối mật khẩu cũ.
 - `CI=true bash scripts/verify.sh frontend-e2e` trên full Compose local sau thay đổi: exit 0; `1 passed (6.4s)`. GitHub run mới vẫn là bằng chứng cuối cho `compose-smoke`.
+- GitHub commit `5837be2`: cả push run và PR run đều đạt. `safe` mất 22/34 giây, `integration` 41/50 giây và `compose-smoke` 2 phút 17 giây/1 phút 59 giây. Bước Compose cài Chromium, tạo credential tạm đã mask, dựng bốn service và chạy Playwright thành công.
 
 ## Ma trận tiêu chí chấp nhận
 
@@ -147,7 +149,7 @@ Lỗi hoặc giới hạn còn lại:
 
 ## Lỗi và giới hạn hiện biết
 
-- MySQL Testcontainers, Mailpit và Playwright Chromium đã chạy/kiểm chứng local; chưa có clean-machine run hoặc run GitHub Actions.
+- MySQL Testcontainers, Mailpit và Playwright Chromium đã chạy local; GitHub hosted runner đã checkout sạch, tạo volume mới và chạy đủ ba job CI thành công.
 - `DeviceApplicationTests` đã chạy runtime với Testcontainers và không dùng datasource ngoài.
 - Email hiện còn đồng bộ trong request/transaction ở các luồng quan trọng.
 - Collection không giới hạn và export `findAll()` có thể gây vấn đề khi dữ liệu tăng.
@@ -164,5 +166,5 @@ Lỗi hoặc giới hạn còn lại:
 
 ## Kết luận
 
-- Đã bắt đầu implementation theo spec Approved, nhưng chưa đạt G1 và chưa được tuyên bố production-ready.
-- Bước tiếp theo: push branch/mở PR, xác nhận ba job GitHub Actions; người dùng thực hiện PRD-110 và hoàn tất các điều kiện Gate G1 còn lại.
+- Gate G1 tự động đã đạt trên local và GitHub, nhưng hệ thống chưa được tuyên bố production-ready vì các giai đoạn và follow-up bảo mật sau G1 còn mở.
+- Bước tiếp theo: người dùng thực hiện PRD-110; sau đó tiếp tục Giai đoạn 2 theo task/dependency đã duyệt.

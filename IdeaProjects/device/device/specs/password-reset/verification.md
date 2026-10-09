@@ -2,7 +2,7 @@
 
 ## Trạng thái
 
-Tính năng đã có implementation backend/frontend; backend đã được kiểm chứng trên MySQL cô lập và Mailpit local. Browser E2E, rate limit, email nền và failure/recovery vẫn chưa hoàn tất.
+Tính năng đã có implementation backend/frontend; MySQL cô lập, Mailpit và Playwright Chromium browser E2E đã đạt local/GitHub. Rate limit, email nền và failure/recovery vẫn chưa hoàn tất.
 
 ## Bằng chứng hiện có
 
@@ -18,6 +18,8 @@ Tính năng đã có implementation backend/frontend; backend đã được ki�
 | Full backend suite với `DeviceApplicationTests` | 31 thành công, 0 failure/error/skipped | MySQL 8.4.11 Testcontainers; Flyway V1/V2 và password reset integration |
 | `npm run lint` | Thành công | Frontend, oxlint |
 | `npm run build` | Thành công | TypeScript và Vite production build |
+| `bash scripts/verify.sh frontend-e2e` | Thành công | Playwright Chromium điều khiển DOM thật qua frontend/backend/MySQL/Mailpit |
+| GitHub Device CI | Thành công | `safe`, `integration`, `compose-smoke` đều xanh trên commit `5837be2` |
 
 ## Ma trận cần kiểm tra
 
@@ -31,11 +33,11 @@ Tính năng đã có implementation backend/frontend; backend đã được ki�
 | V-06 | Token hết hạn | Bị từ chối | Có unit test; cần E2E |
 | V-07 | Token không tồn tại | Bị từ chối với lỗi chung | Có unit test; cần E2E |
 | V-08 | JWT phát trước reset | Resource server và introspect từ chối | Có test cô lập; cần E2E |
-| V-09 | Mật khẩu cũ/mới | Cũ thất bại, mới đăng nhập thành công | Chưa chạy E2E |
-| V-10 | Link email mở frontend | Token được điền và form submit thành công | Chưa chạy trình duyệt |
+| V-09 | Mật khẩu cũ/mới | Cũ thất bại, mới đăng nhập thành công | Đạt bằng Playwright Chromium |
+| V-10 | Link email mở frontend | Token được điền và form submit thành công | Đạt bằng Playwright + Mailpit |
 | V-11 | Gửi email thất bại | Token vừa tạo không dùng được, không lộ raw token | Có unit test; cần staging failure test |
 | V-12 | Migration V2 trên schema V1 | Migration thành công, constraint/index đúng | Đạt trên MySQL 8.4.11 tạm; 2 migration được xác nhận |
-| V-13 | Mở link reset có query token | Token được nạp vào form rồi biến mất khỏi URL; referrer không chứa token | Chưa chạy trình duyệt |
+| V-13 | Mở link reset có query token | Token được nạp vào form rồi biến mất khỏi URL; referrer không chứa token | Đạt bằng Playwright Chromium |
 | V-14 | So sánh request email tồn tại/không tồn tại | Không có timing side-channel rõ ràng và cả hai chịu cùng rate limit | Chưa triển khai follow-up production |
 
 ## Kết quả review tĩnh 2026-09-30
@@ -104,6 +106,13 @@ Không thay `Chưa chạy` bằng `Thành công` nếu chưa có bằng chứng 
 - Frontend `/reset-password` trả HTTP 200 theo SPA fallback; Nginx trả `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff` và `X-Frame-Options: DENY`.
 - Bằng chứng này xác nhận container/proxy/header và API smoke, nhưng **không** xác nhận PR-409/PR-410: test không chạy browser, không bấm link Mailpit, không quan sát address bar/referrer thực và không hoàn tất reset bằng token hợp lệ.
 - Production dependencies không có vulnerability ở mức npm audit hiện tại; dev toolchain còn cảnh báo high ở `source-map-js`, cần frontend owner review thay đổi lockfile/dependency.
+
+## Lần chạy Playwright/GitHub CI 2026-10-09
+
+- Playwright Chromium điều khiển DOM thật qua full Compose: login thành công, forgot password, lấy link Mailpit, reset, xóa token khỏi URL, kiểm tra `Referer`, login mật khẩu mới và từ chối mật khẩu cũ.
+- Local persistent DB có bước khôi phục mật khẩu; `CI=true` dùng volume tạm nên bỏ reset khôi phục dư thừa. Local CI-mode đạt `1 passed (6.4s)`.
+- `source-map-js` là dependency bắc cầu `vite -> postcss`, đã lên 1.2.2; `npm audit --audit-level=high` báo 0 vulnerability.
+- PR #1, commit `5837be2`: GitHub `safe`, `integration` và `compose-smoke` đều đạt ở cả push run lẫn PR run. Credential CI là giá trị ngẫu nhiên tạm và được mask trước khi ghi `GITHUB_ENV`.
 
 ## Lần chạy 2026-09-29
 

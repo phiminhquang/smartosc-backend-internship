@@ -4,7 +4,7 @@
 
 - Spec: Approved ngày 2026-10-08.
 - Implementation: Giai đoạn 0/1 đang thực hiện; các giai đoạn sau chưa bắt đầu.
-- Verification: Cổng `safe`, MySQL integration, frontend static tests, local Compose bốn service và Playwright Chromium E2E đã đạt; CI run trên GitHub còn thiếu.
+- Verification: Cổng `safe`, MySQL integration, frontend static tests, local Compose bốn service, Playwright Chromium E2E và ba job GitHub CI đều đạt.
 - Feature password reset vẫn là công việc đang Verifying và là dependency của Giai đoạn 1/4.
 
 ## Ký hiệu owner và cách làm
@@ -47,17 +47,17 @@
 - [x] PRD-105 `[Owner: Codex] [AI thực hiện]` Thêm MySQL Testcontainers và migration test V1 -> V2 trên database mới. Full suite đạt 31 test trên MySQL 8.4.11 tạm.
 - [x] PRD-106 `[Owner: Codex] [AI thực hiện]` Viết backend integration test password reset với database/email test áp dụng. Test DB đạt; Compose smoke đạt request/email/confirm/reuse/login.
 - [x] PRD-107 `[Owner: Antigravity] [AI thực hiện]` Hoàn thiện Playwright Chromium E2E điều khiển DOM thật: login thành công, forgot/reset qua Mailpit, xóa token khỏi URL, kiểm tra `Referer`, login bằng mật khẩu mới, từ chối mật khẩu cũ và khôi phục mật khẩu ban đầu. Codex chạy lại `bash scripts/verify.sh frontend-e2e` thành công ngày 2026-10-09.
-- [x] PRD-108 `[Owner: Codex] [AI thực hiện]` Tạo GitHub Actions backend/migration/safe checks tại Git root `.github/workflows/device-ci.yml`; chưa chạy trên GitHub.
-- [x] PRD-109 `[Owner: Antigravity] [AI thực hiện]` Frontend contract/security tests, lint/build và live Compose smoke đã được tích hợp vào `scripts/verify.sh` và workflow Device CI. Workflow chưa có run trên GitHub.
+- [x] PRD-108 `[Owner: Codex] [AI thực hiện]` Tạo GitHub Actions backend/migration/safe checks tại Git root `.github/workflows/device-ci.yml`; `safe` và `integration` đã chạy xanh trên GitHub cho commit `5837be2`.
+- [x] PRD-109 `[Owner: Antigravity] [AI thực hiện]` Frontend contract/security tests, lint/build và Playwright Compose E2E đã được tích hợp vào `scripts/verify.sh` và workflow Device CI; `compose-smoke` đã chạy xanh trên GitHub.
 - [ ] PRD-110 `[Owner: User] [AI hướng dẫn]` Chạy Compose, mở Mailpit và kiểm tra password reset trên trình duyệt.
-- [ ] PRD-111 `[Owner: Integration]` Ghi kết quả Giai đoạn 1 vào verification và cập nhật task password-reset liên quan.
+- [x] PRD-111 `[Owner: Integration]` Ghi kết quả Giai đoạn 1 vào verification và cập nhật task password-reset liên quan.
 
 ### Gate G1
 
-- [ ] G1-1 Máy sạch chạy được stack bằng quy trình đã ghi.
+- [x] G1-1 GitHub hosted runner checkout sạch, tạo volume MySQL mới và chạy đủ bốn service healthy bằng workflow đã ghi.
 - [x] G1-2 Migration và integration test chạy trên MySQL cô lập: 31 test đạt, Flyway V1/V2 đạt.
-- [ ] G1-3 Password reset E2E đạt các trường hợp áp dụng.
-- [ ] G1-4 Backend CI và frontend lint/build đạt.
+- [x] G1-3 Playwright Chromium password reset E2E đạt login, Mailpit, reset, URL/referrer và mật khẩu cũ/mới.
+- [x] G1-4 GitHub `safe`, `integration` và `compose-smoke` đều đạt trên commit `5837be2`.
 
 ## Giai đoạn 2 — Phân trang, dữ liệu lớn và import/export
 
@@ -164,7 +164,7 @@
 
 - PRD-003, PRD-103, PRD-107 và phần tích hợp CI PRD-109 đã được kiểm tra; Playwright Chromium E2E local đã đạt.
 - Docker Engine/Compose và quyền user đã hoạt động; blocker Docker được gỡ. Stack local hiện đang chạy healthy.
-- Password reset đã có MySQL Testcontainers, full Compose bốn service và Playwright E2E qua Mailpit/frontend proxy; PRD-110, GitHub CI run, JWT cũ trên Compose và PR-207/208/209 vẫn còn mở.
+- Password reset đã có MySQL Testcontainers, full Compose, Playwright E2E và GitHub CI xanh; PRD-110, JWT cũ trên Compose và PR-207/208/209 vẫn còn mở.
 - Chưa chọn provider demo; blocker này chỉ áp dụng Giai đoạn 6, không chặn local/test.
 
 ## Quy tắc cập nhật

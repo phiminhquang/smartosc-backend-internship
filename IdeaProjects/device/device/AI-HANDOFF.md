@@ -32,19 +32,19 @@
 
 ## Blocker và rủi ro còn lại
 
-- MySQL Testcontainers/Compose, frontend container, Mailpit và browser E2E local đã có; chưa có clean-machine/CI run.
-- Playwright Chromium E2E hiện điều khiển DOM thật và yêu cầu login thành công; PRD-107 đã đạt local. PRD-110 và các điều kiện Gate G1 còn lại chưa tự động đóng.
+- MySQL Testcontainers/Compose, frontend container, Mailpit và browser E2E đã đạt local và GitHub hosted runner sạch.
+- Playwright Chromium E2E điều khiển DOM thật và yêu cầu login thành công; PRD-107 và các tiêu chí tự động Gate G1 đã đạt. PRD-110 của người dùng vẫn mở.
 - `source-map-js` là dependency bắc cầu qua Vite/PostCSS, đã lên 1.2.2; `npm audit --audit-level=high` ngày 2026-10-09 báo 0 vulnerability.
 - SMTP hiện đồng bộ trong request transaction, có thể tạo timing side-channel và giữ database lock khi gọi mạng.
 - Cooldown theo user chưa thay thế rate limit theo IP/identity cho endpoint public.
 
 ## Việc tiếp theo
 
-1. Push branch/mở PR và xác nhận ba job Device CI, đặc biệt `compose-smoke`, chạy xanh trên GitHub; không suy ra trạng thái CI từ file YAML.
-2. Người dùng thực hiện PRD-110 theo `docs/runbooks/local-stack.md`.
-3. Sau CI và xác nhận người dùng, cập nhật các điều kiện Gate G1 còn lại trước khi bắt đầu Giai đoạn 2.
+1. Người dùng thực hiện PRD-110 theo `docs/runbooks/local-stack.md`.
+2. Review/merge PR #1 khi phù hợp.
+3. Tiếp tục Giai đoạn 2 theo task/dependency đã duyệt; không bỏ qua PR-207/208/209 trước public production.
 4. Trước public production, hoàn tất PR-207/208/209 trong `tasks.md`.
-5. Chỉ đóng Gate G1 sau khi browser E2E và CI có bằng chứng.
+5. Không tuyên bố production-ready chỉ từ Gate G1; các giai đoạn và follow-up bảo mật còn lại vẫn áp dụng.
 
 ## Cảnh báo vận hành
 
@@ -144,4 +144,5 @@
 - PR #1 đã mở. Hai run đầu có `safe`/`integration` pass nhưng `compose-smoke` fail tại bước reset khôi phục do thiếu chờ route SPA; test đã được sửa để đợi `/forgot-password`, credential tạm trong workflow cũng đã được mask trước `GITHUB_ENV`.
 - Chromium E2E local sau race fix vẫn pass `1 passed (1.1m)`; cần xem rerun GitHub trên commit sửa trước khi tuyên bố `compose-smoke` xanh.
 - Rerun GitHub thứ hai vẫn fail ở riêng reset khôi phục tùy chọn. Mô phỏng CI local với project/volume tạm và credential ngẫu nhiên đạt; test đã được tách để chỉ khôi phục local DB bền vững, còn `CI=true` bỏ reset lần hai vì database runner là tạm. Cần xác nhận rerun tiếp theo.
-- `CI=true bash scripts/verify.sh frontend-e2e` sau thay đổi đạt `1 passed (6.4s)` trên full Compose local; GitHub rerun tiếp theo là bằng chứng còn thiếu.
+- `CI=true bash scripts/verify.sh frontend-e2e` sau thay đổi đạt `1 passed (6.4s)` trên full Compose local.
+- GitHub commit `5837be2`: `safe`, `integration` và `compose-smoke` đều pass ở cả push run và PR run. PR #1 đang mở; PRD-110 vẫn thuộc Owner User.
