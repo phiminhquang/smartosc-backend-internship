@@ -1,5 +1,8 @@
 # Chạy Device trong môi trường local cô lập
 
+Xem thêm [device-data-scale.md](device-data-scale.md) khi cần sinh dataset tổng
+hợp và kiểm tra import/export trên local/Testcontainers.
+
 ## Mục đích và ranh giới
 
 Bộ Compose tại `compose.yaml` chỉ dành cho phát triển/kiểm thử local. MySQL dùng volume riêng của Compose, Mailpit giữ email trong môi trường thử, backend chỉ mở cổng trên `127.0.0.1`. Không dùng credentials, URL database hoặc email production trong bộ này.

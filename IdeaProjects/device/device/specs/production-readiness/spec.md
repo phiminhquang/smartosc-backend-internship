@@ -168,6 +168,32 @@ Trạng thái: **Approved — người dùng duyệt PRD-202 ngày 2026-10-09 sa
 - Với quan hệ `User.roles` dạng to-many, không page trực tiếp trên collection fetch join; dùng page ID/two-step fetch hoặc chiến lược tương đương đã có integration test để tránh in-memory pagination và sai `totalElements`.
 - Video tham khảo do người dùng cung cấp: [Tối ưu phân trang MySQL trên bảng lớn](https://www.youtube.com/watch?v=tjT4O5HGIEU&t=870s). Con số trong video là ví dụ bên ngoài, không phải benchmark của Device.
 
+## Hợp đồng import/export thiết bị Giai đoạn 2 (PRD-206/207)
+
+Trạng thái: **Approved by implementation scope — giữ nguyên endpoint, quyền truy cập và payload HTTP hiện có; chỉ thay cách xử lý tài nguyên ở backend.**
+
+### Export
+
+- `GET /api/devices/export/csv` tiếp tục trả `text/csv;charset=UTF-8`, tên file `devices.csv`, UTF-8 BOM và các cột hiện có.
+- `GET /api/devices/export/excel` tiếp tục trả XLSX với tên file `devices.xlsx`, sheet `Devices` và các cột hiện có.
+- Cả hai endpoint ghi trực tiếp vào response stream và đọc database theo batch có thứ tự `id,asc`; không gọi `findAll()` và không tạo toàn bộ file trong một `byte[]`.
+- CSV giữ bộ nhớ theo batch. XLSX dùng streaming workbook với cửa sổ row hữu hạn và file tạm do Apache POI quản lý; file tạm phải được dọn khi kết thúc hoặc lỗi.
+- Batch export mặc định là `500` bản ghi; cửa sổ XLSX mặc định là `100` row. Đây là giới hạn cấu hình và sẽ được đánh giá lại bằng PRD-208, không phải tuyên bố hiệu năng production.
+
+### Import CSV
+
+- `POST /api/devices/import/csv` giữ response `ApiResponse<Integer>`; `result` là số thiết bị đã tạo.
+- File phải có phần mở rộng `.csv`, không rỗng, tối đa `10 MiB`, và có đủ header `category`, `name`, `model`; `description` là tùy chọn. Header không hợp lệ trả code `1051`.
+- File vượt giới hạn trả HTTP `400`, code `1056`. Giới hạn multipart và kiểm tra ở service phải thống nhất để request bị chặn trước hoặc trong xử lý với cùng error contract.
+- Parser đọc tuần tự; backend flush/clear persistence context mỗi `100` row. Import giữ tính nguyên tử hiện tại: một row không hợp lệ làm rollback toàn bộ transaction và không trả partial success.
+- Validation category/name/model và việc sinh serial tiếp tục dùng nghiệp vụ hiện có; không nhận ID, serial, state hoặc audit field từ file import.
+
+### Data generator an toàn
+
+- Generator PRD-207 chỉ tạo CSV tổng hợp trên filesystem từ số row và đường dẫn output được chỉ định; không đọc `.env`, không mở kết nối mạng và không truy cập database.
+- Generator chỉ cho phép từ `1` đến `1.000.000` row, dùng dữ liệu xác định để chạy lặp lại và từ chối ghi đè file trừ khi người chạy truyền `--force`.
+- Việc import dataset vào local/Testcontainers là bước riêng có chủ ý. Generator không được tự suy ra hoặc nhận URL production.
+
 ### FR-4: Tính đúng đắn khi request đồng thời
 
 - Given hai request cùng thao tác lên một thiết bị, assignment, extension hoặc repair,

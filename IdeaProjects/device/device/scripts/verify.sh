@@ -61,6 +61,40 @@ test_password_reset_backend() {
     run_backend_tests "-Dtest=${test_classes}"
 }
 
+test_safe_backend() {
+    local test_classes
+    test_classes="PasswordResetServiceImplTest,AuthenticationimplTest,JwtTokenVersionValidatorTest,AuthenticationControllerSecurityTest,DeviceFileServiceImplTest"
+
+    run_backend_tests "-Dtest=${test_classes}"
+}
+
+test_data_generator() {
+    local generator_dir
+    local generator_file
+    local line_count
+
+    generator_dir="$(mktemp -d "${TMPDIR:-/tmp}/device-generator.XXXXXX")"
+    generator_file="${generator_dir}/devices.csv"
+
+    bash scripts/generate-device-csv.sh --rows 7 --output "${generator_file}" >/dev/null
+    line_count="$(wc -l < "${generator_file}")"
+
+    if [[ "${line_count}" -ne 8 ]]; then
+        printf 'Data generator produced %s lines; expected 8.\n' "${line_count}" >&2
+        rm -rf -- "${generator_dir}"
+        return 1
+    fi
+
+    if bash scripts/generate-device-csv.sh --rows 7 --output "${generator_file}" >/dev/null 2>&1; then
+        printf '%s\n' 'Data generator overwrote an existing file without --force.' >&2
+        rm -rf -- "${generator_dir}"
+        return 1
+    fi
+
+    rm -rf -- "${generator_dir}"
+    printf '%s\n' 'Synthetic device CSV generator checks passed.'
+}
+
 check_frontend() {
     (
         cd frontend
@@ -126,7 +160,8 @@ case "${mode}" in
     safe)
         check_docs
         compile_backend
-        test_password_reset_backend
+        test_safe_backend
+        test_data_generator
         check_frontend
         ;;
     docs)

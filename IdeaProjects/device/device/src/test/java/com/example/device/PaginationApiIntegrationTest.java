@@ -5,6 +5,8 @@ import com.example.device.enums.DeviceCategory;
 import com.example.device.enums.DeviceState;
 import com.example.device.enums.ExtensionRequestStatus;
 import com.example.device.enums.RepairStatus;
+import com.example.device.exception.AppException;
+import com.example.device.exception.ErrorCode;
 import com.example.device.model.AssignmentExtension;
 import com.example.device.model.Device;
 import com.example.device.model.DeviceAssignment;
@@ -18,6 +20,7 @@ import com.example.device.repository.DeviceRepository;
 import com.example.device.repository.RoleRepository;
 import com.example.device.repository.UserRepository;
 import com.example.device.service.EmailService;
+import com.example.device.service.DeviceFileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,9 +32,15 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -42,6 +51,9 @@ import java.util.UUID;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -69,6 +81,10 @@ class PaginationApiIntegrationTest {
     private DeviceRepairRepository repairRepository;
     @Autowired
     private AssignmentExtensionRepository extensionRepository;
+    @Autowired
+    private DeviceFileService deviceFileService;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
     @MockitoBean
     private EmailService emailService;
 
@@ -83,6 +99,8 @@ class PaginationApiIntegrationTest {
         registry.add("spring.datasource.password", () -> "");
         registry.add("app.admin.password", () -> TEST_ADMIN_PASSWORD);
         registry.add("jwt.signer-key", () -> TEST_JWT_KEY);
+        registry.add("app.device-file.export-batch-size", () -> 2);
+        registry.add("app.device-file.import-batch-size", () -> 2);
     }
 
     @BeforeEach
@@ -195,6 +213,77 @@ class PaginationApiIntegrationTest {
         assertInvalid("/api/assignments?status=UNKNOWN");
         assertInvalid("/api/assignments?userId=not-a-uuid");
         assertInvalid("/api/devices?size=101");
+    }
+
+    @Test
+    @WithMockUser(username = EMPLOYEE_EMAIL, roles = {"ADMIN", "IT_STAFF", "EMPLOYEE"})
+    void deviceFileBatchQueriesAndImportRunAgainstMysql() {
+        deviceRepository.saveAllAndFlush(List.of(
+                Device.builder()
+                        .category(DeviceCategory.MONITOR)
+                        .serialNumber("PAGER-0002")
+                        .name("Pager Monitor")
+                        .model("P2")
+                        .state(DeviceState.AVAILABLE)
+                        .build(),
+                Device.builder()
+                        .category(DeviceCategory.PHONE)
+                        .serialNumber("PAGER-0003")
+                        .name("Pager Phone")
+                        .model("P3")
+                        .state(DeviceState.AVAILABLE)
+                        .build()
+        ));
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        deviceFileService.exportCsv(output);
+        String csv = output.toString(StandardCharsets.UTF_8);
+
+        assertTrue(csv.startsWith("\uFEFFid,category,serialNumber,name"));
+        assertTrue(csv.contains("Pager Laptop"));
+        assertTrue(csv.contains("Pager Monitor"));
+        assertTrue(csv.contains("Pager Phone"));
+
+        long countBeforeImport = deviceRepository.count();
+        MockMultipartFile importFile = new MockMultipartFile(
+                "file",
+                "devices.csv",
+                "text/csv",
+                ("\uFEFFcategory,name,model,description\n"
+                        + "LAPTOP,Imported Laptop,I1,MySQL batch row 1\n"
+                        + "PHONE,Imported Phone,I2,MySQL batch row 2\n"
+                        + "MONITOR,Imported Monitor,I3,MySQL batch row 3\n")
+                        .getBytes(StandardCharsets.UTF_8)
+        );
+
+        assertEquals(3, deviceFileService.importCsv(importFile));
+        assertEquals(countBeforeImport + 3, deviceRepository.count());
+    }
+
+    @Test
+    @WithMockUser(username = EMPLOYEE_EMAIL, roles = {"ADMIN", "IT_STAFF", "EMPLOYEE"})
+    void invalidRowAfterAFlushedImportBatchRollsBackEveryRow() {
+        long countBeforeImport = deviceRepository.count();
+        MockMultipartFile importFile = new MockMultipartFile(
+                "file",
+                "devices.csv",
+                "text/csv",
+                ("category,name,model,description\n"
+                        + "LAPTOP,Rollback Laptop,R1,Valid row 1\n"
+                        + "PHONE,Rollback Phone,R2,Valid row 2\n"
+                        + "INVALID,Rollback Invalid,R3,Invalid row 3\n")
+                        .getBytes(StandardCharsets.UTF_8)
+        );
+        TransactionTemplate isolatedImport = new TransactionTemplate(transactionManager);
+        isolatedImport.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+        AppException exception = assertThrows(
+                AppException.class,
+                () -> isolatedImport.executeWithoutResult(status -> deviceFileService.importCsv(importFile))
+        );
+
+        assertEquals(ErrorCode.INVALID_DEVICE_CATEGORY, exception.getErrorCode());
+        assertEquals(countBeforeImport, deviceRepository.count());
     }
 
     private void assertSinglePage(String path, int totalElements) throws Exception {

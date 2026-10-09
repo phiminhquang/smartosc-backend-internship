@@ -85,7 +85,8 @@ public enum ErrorCode {
 
     PASSWORD_RESET_TOKEN_INVALID(1054, "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST),
 
-    INVALID_PAGINATION_REQUEST(1055, "Tham số phân trang, lọc hoặc sắp xếp không hợp lệ", HttpStatus.BAD_REQUEST);
+    INVALID_PAGINATION_REQUEST(1055, "Tham số phân trang, lọc hoặc sắp xếp không hợp lệ", HttpStatus.BAD_REQUEST),
+    FILE_TOO_LARGE(1056, "File vượt quá kích thước cho phép", HttpStatus.BAD_REQUEST);
 
     private final int code;
     private final String message;

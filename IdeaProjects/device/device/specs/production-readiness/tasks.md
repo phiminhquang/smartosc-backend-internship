@@ -66,8 +66,8 @@
 - [x] PRD-203 `[Owner: Codex] [AI thực hiện]` Implement `PageResult`, validation/allow-list, deterministic sort và filter ở controller-service-repository; devices dùng chung validation `page/size`.
 - [x] PRD-204 `[Owner: Codex] [AI thực hiện]` Integration test MySQL cho page boundary, tám endpoint, filter, sort, giới hạn size và input lỗi; full suite đạt 34/34 test.
 - [x] PRD-205 `[Owner: Antigravity] [AI thực hiện]` Đóng N/A: audit xác nhận frontend hiện chỉ gọi devices và không tiêu thụ tám endpoint breaking; phạm vi đã duyệt không tạo màn hình mới nên không sửa `frontend/`.
-- [ ] PRD-206 `[Owner: Codex] [AI thực hiện]` Thiết kế và implement export/import theo batch/stream hoặc background job dựa trên phép đo.
-- [ ] PRD-207 `[Owner: Codex] [AI thực hiện]` Tạo data generator an toàn cho test; không đọc/ghi production.
+- [x] PRD-206 `[Owner: Codex] [AI thực hiện]` Export CSV/XLSX stream trực tiếp, đọc MySQL theo keyset batch; import CSV có giới hạn 10 MiB và flush/clear theo batch. Unit test và MySQL integration test đạt.
+- [x] PRD-207 `[Owner: Codex] [AI thực hiện]` Generator CSV tổng hợp chỉ ghi filesystem, giới hạn row và từ chối ghi đè mặc định; không đọc `.env`, không có kết nối database/mạng.
 - [ ] PRD-208 `[Owner: Codex] [AI thực hiện]` Thu baseline query/heap/latency trên dataset đã ghi cấu hình.
 - [ ] PRD-209 `[Owner: Codex] [AI thực hiện]` Review query plan và thêm migration index tối thiểu có so sánh trước/sau.
 - [ ] PRD-210 `[Owner: User] [AI hướng dẫn]` Chạy kịch bản dữ liệu lớn, lưu kết quả/ảnh và xác nhận giới hạn máy.
@@ -76,7 +76,7 @@
 ### Gate G2
 
 - [x] G2-1 Collection lớn trong phạm vi PRD-201 đã phân trang; devices giữ contract hiện tại nhưng có validation chung.
-- [ ] G2-2 Import/export không bắt buộc nạp toàn bộ dữ liệu lớn vào bộ nhớ.
+- [x] G2-2 Import/export không bắt buộc nạp toàn bộ dữ liệu lớn vào bộ nhớ; implementation và test xác nhận DB/persistence context/row window đều được giới hạn theo batch.
 - [ ] G2-3 Index có bằng chứng query plan và đo trước/sau.
 - [x] G2-4 Frontend không tiêu thụ tám endpoint breaking và tiếp tục dùng contract devices không đổi.
 
