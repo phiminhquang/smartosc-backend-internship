@@ -268,8 +268,11 @@ test.describe('End-to-End Browser Authentication & Password Reset Flow', () => {
     await expect(loginError).toBeVisible()
     await expect(loginError).toContainText('Chưa xác thực')
 
-    // 11. Đảm bảo dữ liệu chạy lại được (Self-healing restore về initialPass nếu đang ở tempNewPass)
-    if (targetNewPass !== initialPass) {
+    // 11. Khôi phục local DB bền vững; CI dùng volume tạm nên không cần reset lần hai.
+    const shouldRestorePersistentLocalState =
+      process.env.CI !== 'true' && targetNewPass !== initialPass
+
+    if (shouldRestorePersistentLocalState) {
       await ensureCooldownExpired()
       await clearMailpitMessages()
 

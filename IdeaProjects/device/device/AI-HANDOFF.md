@@ -143,3 +143,5 @@
 - `.github/workflows/device-ci.yml` đã có bước cài Chromium và system dependencies trong `compose-smoke`; GitHub đã chạy được qua cài browser và dựng full Compose trước khi phát hiện race của test.
 - PR #1 đã mở. Hai run đầu có `safe`/`integration` pass nhưng `compose-smoke` fail tại bước reset khôi phục do thiếu chờ route SPA; test đã được sửa để đợi `/forgot-password`, credential tạm trong workflow cũng đã được mask trước `GITHUB_ENV`.
 - Chromium E2E local sau race fix vẫn pass `1 passed (1.1m)`; cần xem rerun GitHub trên commit sửa trước khi tuyên bố `compose-smoke` xanh.
+- Rerun GitHub thứ hai vẫn fail ở riêng reset khôi phục tùy chọn. Mô phỏng CI local với project/volume tạm và credential ngẫu nhiên đạt; test đã được tách để chỉ khôi phục local DB bền vững, còn `CI=true` bỏ reset lần hai vì database runner là tạm. Cần xác nhận rerun tiếp theo.
+- `CI=true bash scripts/verify.sh frontend-e2e` sau thay đổi đạt `1 passed (6.4s)` trên full Compose local; GitHub rerun tiếp theo là bằng chứng còn thiếu.

@@ -94,6 +94,9 @@
 - Workflow `compose-smoke` đã được bổ sung bước `npx playwright install --with-deps chromium` trước khi dựng Compose; bước cài Chromium và dựng đủ stack đã chạy thành công trên GitHub.
 - GitHub push/PR run đầu tiên: `safe` và `integration` đều pass; `compose-smoke` fail ở bước self-healing do test chưa đợi React Router chuyển tới `/forgot-password` trước khi dùng selector chung. Đây là race condition của test, không phải failure nghiệp vụ reset chính.
 - Đã thêm assertion chờ đúng URL trước lần reset khôi phục và mask hai credential tạm trước khi ghi `GITHUB_ENV`. `bash scripts/verify.sh frontend-e2e` sau sửa tiếp tục exit 0, `1 passed (1.1m)`; GitHub rerun phải được kiểm tra trước khi đóng CI gate.
+- Rerun GitHub thứ hai vẫn fail ở riêng lần reset khôi phục tùy chọn, dù full luồng bắt buộc đã qua tới bước từ chối mật khẩu cũ. Mô phỏng CI local bằng Compose project/volume riêng, mật khẩu ngẫu nhiên 64 ký tự và cleanup volume tạm đạt `1 passed (1.1m)`.
+- Test tiếp tục khôi phục mật khẩu cho local DB bền vững, nhưng bỏ reset lần hai khi `CI=true` vì runner dùng database/volume tạm và bị hủy sau job. Luồng CI bắt buộc vẫn giữ login, Mailpit, reset, URL/referrer, mật khẩu mới và từ chối mật khẩu cũ.
+- `CI=true bash scripts/verify.sh frontend-e2e` trên full Compose local sau thay đổi: exit 0; `1 passed (6.4s)`. GitHub run mới vẫn là bằng chứng cuối cho `compose-smoke`.
 
 ## Ma trận tiêu chí chấp nhận
 
