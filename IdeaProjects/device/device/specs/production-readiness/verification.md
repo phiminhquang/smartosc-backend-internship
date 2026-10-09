@@ -211,6 +211,7 @@ Lỗi hoặc giới hạn còn lại:
 - Không đọc/sửa `.env`, không dùng database ngoài, không sửa frontend hoặc migration/index trong PRD-208.
 - Sau khi thêm harness/report: `bash scripts/verify.sh safe` exit 0; documentation/diff, compile, 20 backend test, generator guard, benchmark isolation guard, 3 frontend test, lint và build 92 module đều đạt.
 - `bash scripts/verify.sh integration` exit 0; 41/41 test đạt, 0 failure/error/skip trên MySQL 8.4.11 Testcontainers; Flyway V1/V2 đạt. `DeviceScaleBenchmarkIT` không thuộc suite mặc định và chỉ chạy khi được gọi rõ qua script có safety guard.
+- GitHub Device CI push run `37940116019` tại commit `cd1ccbb` đạt `safe` 39 giây, `integration` 1 phút 12 giây và `compose-smoke` 5 phút 39 giây trên runner `ubuntu-24.04`.
 
 ## Lần chạy baseline 2026-10-08
 

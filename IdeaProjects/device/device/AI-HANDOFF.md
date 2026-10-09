@@ -209,4 +209,5 @@
 - Full run exit 0 trong 6 phút 10 giây. Report nguyên vẹn đã được lưu ở `docs/benchmarks/device-scale-baseline-2026-10-09.md`; `tasks.md` và `verification.md` đã cập nhật PRD-208. Tóm tắt 100k: import 225,443 giây; median page đầu/deep/keyword 438,772/616,170/378,796 ms; CSV/XLSX export 1.669,511/6.806,224 ms; không OOM với heap 512 MiB.
 - Plan 100k xác nhận deep page scan+sort 100k row (~503 ms), keyword data/count table scan (~332/313 ms). Chưa thêm index; đây là đầu vào cho PRD-209.
 - Gate local sau full baseline đều đạt: `bash scripts/verify.sh safe` có 20 backend test, generator/benchmark guard, frontend test/lint/build; `bash scripts/verify.sh integration` đạt 41/41 test trên MySQL 8.4.11 Testcontainers và Flyway V1/V2.
-- Việc còn lại trên branch này: review diff, commit/push/CI/PR PRD-208. Sau khi merge mới tạo nhánh PRD-209.
+- Commit implementation/report `cd1ccbb`; GitHub push run `37940116019` đạt `safe` 39 giây, `integration` 1 phút 12 giây và `compose-smoke` 5 phút 39 giây.
+- Việc còn lại trên branch này: commit bằng chứng CI, push, mở/merge PR PRD-208 sau PR CI. Sau khi merge mới tạo nhánh PRD-209.
