@@ -194,6 +194,15 @@ Trạng thái: **Approved by implementation scope — giữ nguyên endpoint, qu
 - Generator chỉ cho phép từ `1` đến `1.000.000` row, dùng dữ liệu xác định để chạy lặp lại và từ chối ghi đè file trừ khi người chạy truyền `--force`.
 - Việc import dataset vào local/Testcontainers là bước riêng có chủ ý. Generator không được tự suy ra hoặc nhận URL production.
 
+### Baseline dữ liệu lớn PRD-208
+
+- Benchmark chỉ chạy thủ công khi có `--confirm-isolated`; datasource cấu hình phải là `jdbc:tc:mysql` và database thực tế phải là `device_test`.
+- Dataset mặc định là `1.000`, `10.000`, `100.000` row từ generator PRD-207. Report ghi commit, CPU/RAM, Java/MySQL, JVM heap, warm-up, mọi lần đo và cách lấy peak heap/RSS.
+- Read/export chạy một warm-up và ba lần ghi nhận cho mỗi dataset. Import có một warm-up hạ tầng bằng dataset nhỏ nhất và mặc định một lần ghi nhận mỗi dataset vì đây là phép đo phá dữ liệu, chi phí cao; giới hạn này phải hiện trong report.
+- Phép đo gồm import CSV, page đầu, deep page, keyword ở cuối dataset, CSV export và XLSX export. Report lưu raw latency, heap/RSS baseline/peak/delta, số row hoặc byte output.
+- Cùng report phải lưu `EXPLAIN ANALYZE` trước index cho deep-page data/count và keyword data/count. PRD-208 chỉ thu baseline; PRD-209 mới review plan và quyết định index.
+- Report sinh tự động nằm dưới `target/benchmarks/` và không được ghi đè nếu thiếu `--force`. Dataset tạm bị xóa khi kết thúc; không đọc `.env` và không kết nối database ngoài.
+
 ### FR-4: Tính đúng đắn khi request đồng thời
 
 - Given hai request cùng thao tác lên một thiết bị, assignment, extension hoặc repair,

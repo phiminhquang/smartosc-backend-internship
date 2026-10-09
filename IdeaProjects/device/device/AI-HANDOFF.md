@@ -10,9 +10,9 @@
 - Backend, migration, email template và frontend đã được triển khai.
 - `bash scripts/verify.sh safe` và `bash scripts/verify.sh integration` được chạy lại ngày 2026-10-08 lúc 13:55-13:58 +07: safe đạt toàn bộ, integration đạt 31/31 test trên MySQL Testcontainers.
 - MySQL integration, Flyway V1/V2, full Compose frontend/backend/MySQL/Mailpit và Playwright Chromium browser E2E đã đạt local.
-- PR #2 đã merge vào `main` tại `d34854f`; post-merge `safe`, `integration` và `compose-smoke` đều xanh.
-- Branch hiện tại là `feature/device-file-scale`. PRD-206/207 đã implement tại commit `cf5d95a`, kiểm tra local và Device CI run `37909236650` đều đạt; bước tiếp theo là mở/merge PR, sau đó tách nhánh cho PRD-208 benchmark và PRD-209 query plan/index.
-- Chưa sẵn sàng public production vì PR-207/208/209 trong `tasks.md` còn mở.
+- PR #3 đã merge PRD-206/207 vào `main` tại `9b9e4fd`; post-merge Device CI run `37910483706` đạt `safe` 35 giây, `integration` 1 phút 18 giây và `compose-smoke` 2 phút 34 giây.
+- Branch hiện tại là `feature/device-scale-benchmark`, tách từ `main` sau PR #3. PRD-208 đã có full baseline 1k/10k/100k và đang chờ chạy gate/review/commit; xem mục cuối file trước khi sửa.
+- Chưa sẵn sàng public production vì PRD-209 và các giai đoạn production-readiness sau đó còn mở.
 - Phân công mặc định và ranh giới chỉnh sửa tuân theo `AGENTS.md`; hiện không có ngoại lệ đang hoạt động.
 
 ## Nguồn sự thật cần đọc
@@ -42,9 +42,9 @@
 
 ## Việc tiếp theo
 
-1. Mở và merge PR cho `feature/device-file-scale` sau khi review trạng thái/check; xác nhận post-merge CI trên `main`.
-2. Thực hiện PRD-208 trên dataset tổng hợp có cấu hình máy, warm-up, nhiều lần chạy và số đo heap/latency trung thực.
-3. Chỉ thực hiện PRD-209 sau khi có query plan/baseline; không thêm index hoặc deferred join chỉ từ ví dụ bên ngoài.
+1. Chạy `bash scripts/verify.sh safe` và `bash scripts/verify.sh integration`, review diff PRD-208 rồi commit/push/CI/PR riêng.
+2. Sau khi PRD-208 merge, thực hiện PRD-209 trên nhánh mới bằng cách review plan đã lưu và đo trước/sau cùng dataset/môi trường.
+3. Không thêm index hoặc deferred join nếu phép đo sau thay đổi không chứng minh lợi ích đủ rõ.
 4. Trước public production, hoàn tất PR-207/208/209 trong password-reset `tasks.md`.
 5. Không tuyên bố production-ready chỉ từ Gate G1/G2; các giai đoạn và follow-up bảo mật còn lại vẫn áp dụng.
 
@@ -185,3 +185,28 @@
 - `bash scripts/verify.sh safe` đạt: 20 backend test, generator check, 3 frontend test, lint/build 92 module. Full integration cuối đạt 41/41 test trên MySQL 8.4.11 Testcontainers và Flyway V1/V2, gồm rollback toàn import sau khi batch đầu đã flush.
 - Device CI run `37909236650` tại commit `cf5d95a` đạt `safe` 44 giây, `integration` 1 phút 05 giây và `compose-smoke` 2 phút 20 giây trên Ubuntu 24.04.
 - Chưa sửa `frontend/`, `.env` hoặc migration/index. PRD-208/209 vẫn mở vì chưa chạy dataset lớn, peak heap/RSS/latency hay `EXPLAIN ANALYZE`.
+
+## PRD-208 benchmark ngày 2026-10-09
+
+- PR #3 `feat(device): stream device import and export` đã merge tại `9b9e4fdfb1fd5a76d43178e9b541d3e1555931da`. PR CI run `37910092843` đạt `safe` 41 giây, `integration` 1 phút 07 giây, `compose-smoke` 2 phút; post-merge run `37910483706` cũng xanh toàn bộ như ghi ở đầu file.
+- Branch hiện tại: `feature/device-scale-benchmark`. Working tree cố ý chưa commit:
+  - modified: `AI-HANDOFF.md`, `docs/runbooks/device-data-scale.md`, `scripts/verify.sh`, `specs/production-readiness/spec.md`, `specs/production-readiness/tasks.md`, `specs/production-readiness/verification.md`;
+  - untracked: `docs/benchmarks/device-scale-baseline-2026-10-09.md`, `scripts/benchmark-device-scale.sh`, `src/test/java/com/example/device/DeviceScaleBenchmarkIT.java`.
+- Harness chỉ chạy khi có `--confirm-isolated`, script bỏ toàn bộ biến `DB_*`/`SPRING_DATASOURCE_*`, còn test xác nhận URL cấu hình là `jdbc:tc:mysql` và database thật là `device_test`. Không đọc/sửa `.env`, không sửa `frontend/`, `PaginationSupport.java`, production code hoặc migration/index.
+- Dataset dùng `scripts/generate-device-csv.sh`; mặc định 1k/10k/100k. JVM benchmark cố định `-Xms128m -Xmx512m`. Read/export warm-up 1 và ghi 3 lần; import warm-up hạ tầng rồi ghi 1 lần/dataset vì chi phí cao. Sampler lấy JVM heap và Linux VmRSS mỗi 10 ms.
+- Các operation hiện có: import CSV, page đầu, deep page, keyword cuối dataset, CSV export, XLSX export. Report lưu raw measurement, summary và `EXPLAIN ANALYZE` trước index cho deep-page data/count và keyword data/count.
+- Safety/compile đã đạt: `bash -n scripts/benchmark-device-scale.sh scripts/verify.sh`; benchmark từ chối chạy khi thiếu `--confirm-isolated`; `bash ./mvnw -DskipTests test-compile` thành công. `scripts/verify.sh safe` chưa được chạy lại sau thay đổi PRD-208.
+- Smoke 100 row/1 repetition trên MySQL 8.4.11 Testcontainers đạt và report ở `/tmp/device-benchmark-smoke.md` (không thuộc repository). Lần đầu dừng đúng safety guard do Hikari che URL; guard đã được sửa dùng Spring Environment rồi rerun thành công.
+- Benchmark 1.000 row với cấu hình cuối đạt, report ở `/tmp/device-benchmark-1k.md`: import 6.888 giây, peak heap delta 58 MiB, RSS delta 47,219 MiB; median page đầu 67,065 ms, deep page 55,310 ms, keyword-tail 33,381 ms, CSV export 77,161 ms, XLSX export 257,755 ms. Plan hiện cho thấy deep page và keyword dùng table scan/sort ở 1.000 row. Đây chỉ là smoke/ước lượng, chưa phải full PRD-208.
+- Full baseline 1k/10k/100k đã đạt bằng lệnh:
+
+  ```bash
+  bash scripts/benchmark-device-scale.sh \
+    --confirm-isolated \
+    --output target/benchmarks/device-scale-baseline.md
+  ```
+
+- Full run exit 0 trong 6 phút 10 giây. Report nguyên vẹn đã được lưu ở `docs/benchmarks/device-scale-baseline-2026-10-09.md`; `tasks.md` và `verification.md` đã cập nhật PRD-208. Tóm tắt 100k: import 225,443 giây; median page đầu/deep/keyword 438,772/616,170/378,796 ms; CSV/XLSX export 1.669,511/6.806,224 ms; không OOM với heap 512 MiB.
+- Plan 100k xác nhận deep page scan+sort 100k row (~503 ms), keyword data/count table scan (~332/313 ms). Chưa thêm index; đây là đầu vào cho PRD-209.
+- Gate local sau full baseline đều đạt: `bash scripts/verify.sh safe` có 20 backend test, generator/benchmark guard, frontend test/lint/build; `bash scripts/verify.sh integration` đạt 41/41 test trên MySQL 8.4.11 Testcontainers và Flyway V1/V2.
+- Việc còn lại trên branch này: review diff, commit/push/CI/PR PRD-208. Sau khi merge mới tạo nhánh PRD-209.

@@ -29,7 +29,7 @@
 | Browser E2E | `bash scripts/verify.sh frontend-e2e` | Thành công | Playwright Chromium, 1 test pass trong 1.1 phút; điều khiển DOM thật qua full Compose |
 | Browser manual PRD-110 | Người dùng chạy full Compose và kiểm tra qua trình duyệt/Mailpit | Thành công | 4 container healthy; email/link/reset/login đạt; token biến mất khỏi URL; link cũ bị từ chối |
 | GitHub Device CI | `safe`, `integration`, `compose-smoke` | Thành công | Push run và PR run của commit `5837be2` đều xanh |
-| Data-scale benchmark | Dataset/máy/lệnh phải được ghi | Chưa chạy | |
+| Data-scale benchmark | Dataset/máy/lệnh phải được ghi | Thành công | Baseline 1k/10k/100k, raw latency, heap/RSS và plan lưu tại `docs/benchmarks/device-scale-baseline-2026-10-09.md` |
 | Concurrent requests | MySQL integration test thật | Chưa chạy | |
 | SMTP failure/recovery | Tắt/bật SMTP test | Chưa chạy | |
 | Backup/restore | Restore vào database cô lập và kiểm tra | Chưa chạy | |
@@ -138,11 +138,11 @@
 | V-01 | Máy sạch khởi động stack | Frontend, backend, MySQL, Mailpit healthy bằng quy trình tài liệu hóa | Cả 4 service healthy trên máy local; chưa có clean-machine run | Một phần |
 | V-02 | Full test/migration | Chỉ dùng MySQL cô lập, không thể chạm Aiven ngoài ý muốn | 34 test đạt trên MySQL Testcontainers, Flyway V1/V2; biến DB môi trường bị bỏ | Đạt |
 | V-03 | Password reset E2E | Email/link/reset/login/token revocation đúng contract | Playwright Chromium đạt email/link/reset/login, URL/referrer và mật khẩu cũ/mới; JWT cũ có backend test nhưng chưa kiểm tra trên browser/Compose | Một phần |
-| V-04 | API list với dữ liệu lớn | Trả page có giới hạn/filter/sort đúng contract | Chức năng page/filter/sort đạt trên MySQL thật; benchmark dataset lớn chờ PRD-207/208 | Một phần |
+| V-04 | API list với dữ liệu lớn | Trả page có giới hạn/filter/sort đúng contract | MySQL 8.4.11 đạt tới 100k row; median page đầu 438,772 ms, deep page 616,170 ms tại 100k | Đạt |
 | V-05 | Request size quá giới hạn | Bị từ chối hoặc giới hạn theo contract | `size=101` trên users và devices trả HTTP 400/code 1055 trong integration test | Đạt |
-| V-06 | Export dữ liệu lớn | Không bắt buộc nạp toàn bảng vào heap; file đúng | Unit test xác nhận CSV/XLSX đúng và repository được gọi theo keyset batch; MySQL test thực thi nhiều batch. Chưa benchmark dataset lớn/peak heap | Một phần |
-| V-07 | Import file lớn/lỗi dòng | Xử lý theo giới hạn và báo lỗi xác định | BOM/header/size/batch được test; MySQL test import thật và đếm dữ liệu đúng. Chưa benchmark file lớn hoặc ma trận lỗi nhiều vị trí | Một phần |
-| V-08 | Query trước/sau index | Có query plan, dataset và số đo lặp lại được | Chưa chạy | Chưa chạy |
+| V-06 | Export dữ liệu lớn | Không bắt buộc nạp toàn bảng vào heap; file đúng | 100k: CSV median 1.669,511 ms/peak heap delta 123,444 MiB; XLSX median 6.806,224 ms/117 MiB; output đã có unit/integration test đúng định dạng | Đạt |
+| V-07 | Import file lớn/lỗi dòng | Xử lý theo giới hạn và báo lỗi xác định | 100k CSV 7.100.032 byte import đủ trong 225,443 giây; peak heap delta 117,122 MiB; rollback/header/BOM/size đã có integration/unit test | Đạt |
+| V-08 | Query trước/sau index | Có query plan, dataset và số đo lặp lại được | Baseline trước index và plan 1k/10k/100k đã lưu; so sánh sau index chờ PRD-209 | Một phần |
 | V-09 | Hai request assign cùng device | Chỉ một kết quả hợp lệ; không có hai assignment mở | Chưa chạy | Chưa chạy |
 | V-10 | Hai request return/review/repair | State transition không bị lặp hoặc mâu thuẫn | Chưa chạy | Chưa chạy |
 | V-11 | SMTP tắt khi tạo email | Nghiệp vụ/job theo contract; job không mất | Chưa chạy | Chưa chạy |
@@ -197,7 +197,20 @@ Lỗi hoặc giới hạn còn lại:
 - `bash scripts/verify.sh integration` sau toàn bộ test MySQL mới: exit 0; 41 test đạt, 0 failure/error/skip; MySQL 8.4.11 Testcontainers và Flyway V1/V2 đạt.
 - GitHub Device CI run `37909236650` tại commit `cf5d95a` đạt `safe` 44 giây, `integration` 1 phút 05 giây và `compose-smoke` 2 phút 20 giây trên runner `ubuntu-24.04`.
 - `scripts/generate-device-csv.sh` tạo thử 7 row thành file 8 dòng gồm header và lần chạy lại không `--force` trả exit 2. Generator chỉ dùng `awk`/filesystem; hướng dẫn nằm tại `docs/runbooks/device-data-scale.md`.
-- Giới hạn bằng chứng: chưa chạy dataset 1k/10k/100k, chưa đo peak heap/RSS/latency và chưa lấy query plan. PRD-208/209 tiếp tục mở; không thêm index ở thay đổi này.
+- Tại thời điểm PRD-206/207, dataset lớn/heap/RSS/latency/query plan chưa chạy; khoảng trống này đã được PRD-208 bên dưới đóng. PRD-209 vẫn mở và chưa có migration/index.
+
+## PRD-208 — Baseline dữ liệu lớn ngày 2026-10-09
+
+- Lệnh: `bash scripts/benchmark-device-scale.sh --confirm-isolated --output target/benchmarks/device-scale-baseline.md`; exit 0, `DeviceScaleBenchmarkIT` 1/1 test đạt, Maven total 6 phút 10 giây.
+- Môi trường: Linux `7.0.0-34-generic` amd64, Intel Core i5-1345U, 12 processor, RAM 15.633,9 MiB, Java 17.0.20.1, JVM heap tối đa 512 MiB, MySQL 8.4.11 Testcontainers, commit nền `9b9e4fd`.
+- Dataset tổng hợp xác định gồm 1k/10k/100k device; read/export warm-up 1 và ghi 3 lần, import warm-up bằng dataset nhỏ nhất rồi ghi 1 lần/dataset. Full raw measurements và toàn bộ plan nằm tại `docs/benchmarks/device-scale-baseline-2026-10-09.md`.
+- Median latency 100k: page đầu 438,772 ms; deep page 616,170 ms; keyword cuối bảng 378,796 ms; CSV export 1.669,511 ms; XLSX export 6.806,224 ms. Import 100k là một sample 225.442,547 ms (225,443 giây).
+- Peak heap delta 100k: import 117,122 MiB; page đầu 1 MiB; deep page 2 MiB; keyword 1 MiB; CSV export tối đa 123,444 MiB; XLSX export 117 MiB. JVM không OOM dưới heap 512 MiB.
+- `EXPLAIN ANALYZE` 100k trước index: deep page table scan 100k row + sort 100k row, actual khoảng 503 ms; keyword data table scan 100k row khoảng 332 ms; keyword count table scan khoảng 313 ms. Đây là baseline cho PRD-209, chưa phải bằng chứng sau tối ưu.
+- Giới hạn: import chỉ có một sample mỗi mức; RSS là JVM process và không gồm MySQL container; export dùng counting/null output nên không đo network/browser/disk download; dataset chỉ là device tổng hợp, không mô phỏng assignment/repair hoặc tải đồng thời.
+- Không đọc/sửa `.env`, không dùng database ngoài, không sửa frontend hoặc migration/index trong PRD-208.
+- Sau khi thêm harness/report: `bash scripts/verify.sh safe` exit 0; documentation/diff, compile, 20 backend test, generator guard, benchmark isolation guard, 3 frontend test, lint và build 92 module đều đạt.
+- `bash scripts/verify.sh integration` exit 0; 41/41 test đạt, 0 failure/error/skip trên MySQL 8.4.11 Testcontainers; Flyway V1/V2 đạt. `DeviceScaleBenchmarkIT` không thuộc suite mặc định và chỉ chạy khi được gọi rõ qua script có safety guard.
 
 ## Lần chạy baseline 2026-10-08
 
