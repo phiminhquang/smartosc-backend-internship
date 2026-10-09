@@ -11,7 +11,7 @@
 - `bash scripts/verify.sh safe` và `bash scripts/verify.sh integration` được chạy lại ngày 2026-10-08 lúc 13:55-13:58 +07: safe đạt toàn bộ, integration đạt 31/31 test trên MySQL Testcontainers.
 - MySQL integration, Flyway V1/V2, full Compose frontend/backend/MySQL/Mailpit và Playwright Chromium browser E2E đã đạt local.
 - PR #2 đã merge vào `main` tại `d34854f`; post-merge `safe`, `integration` và `compose-smoke` đều xanh.
-- Branch hiện tại là `feature/device-file-scale`. PRD-206/207 đã implement và kiểm tra local; bước tiếp theo là commit/push/CI cho thay đổi này, sau đó PRD-208 benchmark và PRD-209 query plan/index.
+- Branch hiện tại là `feature/device-file-scale`. PRD-206/207 đã implement tại commit `cf5d95a`, kiểm tra local và Device CI run `37909236650` đều đạt; bước tiếp theo là mở/merge PR, sau đó tách nhánh cho PRD-208 benchmark và PRD-209 query plan/index.
 - Chưa sẵn sàng public production vì PR-207/208/209 trong `tasks.md` còn mở.
 - Phân công mặc định và ranh giới chỉnh sửa tuân theo `AGENTS.md`; hiện không có ngoại lệ đang hoạt động.
 
@@ -42,7 +42,7 @@
 
 ## Việc tiếp theo
 
-1. Chạy lại full integration sau test MySQL PRD-206 mới, review diff, commit/push nhánh `feature/device-file-scale` và xác nhận CI.
+1. Mở và merge PR cho `feature/device-file-scale` sau khi review trạng thái/check; xác nhận post-merge CI trên `main`.
 2. Thực hiện PRD-208 trên dataset tổng hợp có cấu hình máy, warm-up, nhiều lần chạy và số đo heap/latency trung thực.
 3. Chỉ thực hiện PRD-209 sau khi có query plan/baseline; không thêm index hoặc deferred join chỉ từ ví dụ bên ngoài.
 4. Trước public production, hoàn tất PR-207/208/209 trong password-reset `tasks.md`.
@@ -183,4 +183,5 @@
 - XLSX dùng `SXSSFWorkbook` với row window hữu hạn và cleanup file tạm. Import CSV giới hạn 10 MiB, kiểm tra header/BOM, đọc tuần tự và flush/clear theo batch trong transaction nguyên tử.
 - Thêm generator CSV tổng hợp chỉ ghi filesystem, giới hạn 1 đến 1.000.000 row và từ chối ghi đè mặc định; không đọc `.env`, không có code database/mạng. Runbook: `docs/runbooks/device-data-scale.md`.
 - `bash scripts/verify.sh safe` đạt: 20 backend test, generator check, 3 frontend test, lint/build 92 module. Full integration cuối đạt 41/41 test trên MySQL 8.4.11 Testcontainers và Flyway V1/V2, gồm rollback toàn import sau khi batch đầu đã flush.
+- Device CI run `37909236650` tại commit `cf5d95a` đạt `safe` 44 giây, `integration` 1 phút 05 giây và `compose-smoke` 2 phút 20 giây trên Ubuntu 24.04.
 - Chưa sửa `frontend/`, `.env` hoặc migration/index. PRD-208/209 vẫn mở vì chưa chạy dataset lớn, peak heap/RSS/latency hay `EXPLAIN ANALYZE`.

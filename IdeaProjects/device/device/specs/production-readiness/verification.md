@@ -195,6 +195,7 @@ Lỗi hoặc giới hạn còn lại:
 - `PaginationApiIntegrationTest`: 5/5 test đạt trên MySQL 8.4.11 Testcontainers; test mới buộc export đi qua nhiều keyset batch, import ba row thật, và xác nhận lỗi ở row thứ ba rollback cả hai row đã flush trước đó.
 - `bash scripts/verify.sh safe`: exit 0; backend compile, 20 backend test, generator check, 3 frontend test, lint và build 92 module đạt.
 - `bash scripts/verify.sh integration` sau toàn bộ test MySQL mới: exit 0; 41 test đạt, 0 failure/error/skip; MySQL 8.4.11 Testcontainers và Flyway V1/V2 đạt.
+- GitHub Device CI run `37909236650` tại commit `cf5d95a` đạt `safe` 44 giây, `integration` 1 phút 05 giây và `compose-smoke` 2 phút 20 giây trên runner `ubuntu-24.04`.
 - `scripts/generate-device-csv.sh` tạo thử 7 row thành file 8 dòng gồm header và lần chạy lại không `--force` trả exit 2. Generator chỉ dùng `awk`/filesystem; hướng dẫn nằm tại `docs/runbooks/device-data-scale.md`.
 - Giới hạn bằng chứng: chưa chạy dataset 1k/10k/100k, chưa đo peak heap/RSS/latency và chưa lấy query plan. PRD-208/209 tiếp tục mở; không thêm index ở thay đổi này.
 
