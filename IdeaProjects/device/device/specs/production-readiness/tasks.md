@@ -49,7 +49,7 @@
 - [x] PRD-107 `[Owner: Antigravity] [AI thực hiện]` Hoàn thiện Playwright Chromium E2E điều khiển DOM thật: login thành công, forgot/reset qua Mailpit, xóa token khỏi URL, kiểm tra `Referer`, login bằng mật khẩu mới, từ chối mật khẩu cũ và khôi phục mật khẩu ban đầu. Codex chạy lại `bash scripts/verify.sh frontend-e2e` thành công ngày 2026-10-09.
 - [x] PRD-108 `[Owner: Codex] [AI thực hiện]` Tạo GitHub Actions backend/migration/safe checks tại Git root `.github/workflows/device-ci.yml`; `safe` và `integration` đã chạy xanh trên GitHub cho commit `5837be2`.
 - [x] PRD-109 `[Owner: Antigravity] [AI thực hiện]` Frontend contract/security tests, lint/build và Playwright Compose E2E đã được tích hợp vào `scripts/verify.sh` và workflow Device CI; `compose-smoke` đã chạy xanh trên GitHub.
-- [ ] PRD-110 `[Owner: User] [AI hướng dẫn]` Chạy Compose, mở Mailpit và kiểm tra password reset trên trình duyệt.
+- [x] PRD-110 `[Owner: User] [AI hướng dẫn]` Chạy Compose, mở Mailpit và kiểm tra password reset trên trình duyệt. Người dùng xác nhận đạt ngày 2026-10-09: bốn container healthy, nhận email, mở link, token biến mất khỏi URL, reset/login bằng mật khẩu mới thành công và link cũ bị từ chối.
 - [x] PRD-111 `[Owner: Integration]` Ghi kết quả Giai đoạn 1 vào verification và cập nhật task password-reset liên quan.
 
 ### Gate G1
@@ -163,8 +163,8 @@
 ## Blocker hiện tại
 
 - PRD-003, PRD-103, PRD-107 và phần tích hợp CI PRD-109 đã được kiểm tra; Playwright Chromium E2E local đã đạt.
-- Docker Engine/Compose và quyền user đã hoạt động; blocker Docker được gỡ. Stack local hiện đang chạy healthy.
-- Password reset đã có MySQL Testcontainers, full Compose, Playwright E2E và GitHub CI xanh; PRD-110, JWT cũ trên Compose và PR-207/208/209 vẫn còn mở.
+- Docker Engine/Compose và quyền user đã hoạt động; blocker Docker được gỡ. Full stack đạt bốn service healthy trong lần kiểm tra PRD-110.
+- Password reset đã có MySQL Testcontainers, full Compose, Playwright E2E, kiểm tra trình duyệt thủ công và GitHub CI xanh; JWT cũ trên Compose và PR-207/208/209 vẫn còn mở.
 - Chưa chọn provider demo; blocker này chỉ áp dụng Giai đoạn 6, không chặn local/test.
 
 ## Quy tắc cập nhật

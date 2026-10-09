@@ -2,7 +2,7 @@
 
 ## Trạng thái
 
-- Feature đã `Approved`; các tiêu chí tự động của Gate G1 đã đạt trên local và GitHub. PRD-110 của người dùng vẫn mở.
+- Feature đã `Approved`; các tiêu chí tự động của Gate G1 đã đạt trên local và GitHub, và người dùng đã xác nhận kiểm tra thủ công PRD-110 đạt ngày 2026-10-09.
 - File này chỉ ghi kết quả đã thực sự chạy. Không suy ra thành công từ kế hoạch hoặc lịch sử chat.
 - Bằng chứng password reset hiện có tiếp tục nằm trong `specs/password-reset/verification.md`; không sao chép hoặc nâng trạng thái tại đây.
 
@@ -27,6 +27,7 @@
 | Frontend build | Chạy bởi `bash scripts/verify.sh safe` | Thành công | TypeScript/Vite, 92 module transformed |
 | Compose local smoke | Build/start + frontend/API/Mailpit | Thành công | 4 service healthy; SPA route/header và API smoke qua Nginx proxy đạt |
 | Browser E2E | `bash scripts/verify.sh frontend-e2e` | Thành công | Playwright Chromium, 1 test pass trong 1.1 phút; điều khiển DOM thật qua full Compose |
+| Browser manual PRD-110 | Người dùng chạy full Compose và kiểm tra qua trình duyệt/Mailpit | Thành công | 4 container healthy; email/link/reset/login đạt; token biến mất khỏi URL; link cũ bị từ chối |
 | GitHub Device CI | `safe`, `integration`, `compose-smoke` | Thành công | Push run và PR run của commit `5837be2` đều xanh |
 | Data-scale benchmark | Dataset/máy/lệnh phải được ghi | Chưa chạy | |
 | Concurrent requests | MySQL integration test thật | Chưa chạy | |
@@ -100,6 +101,14 @@
 - `CI=true bash scripts/verify.sh frontend-e2e` trên full Compose local sau thay đổi: exit 0; `1 passed (6.4s)`. GitHub run mới vẫn là bằng chứng cuối cho `compose-smoke`.
 - GitHub commit `5837be2`: cả push run và PR run đều đạt. `safe` mất 22/34 giây, `integration` 41/50 giây và `compose-smoke` 2 phút 17 giây/1 phút 59 giây. Bước Compose cài Chromium, tạo credential tạm đã mask, dựng bốn service và chạy Playwright thành công.
 
+## Kiểm tra thủ công PRD-110 ngày 2026-10-09
+
+- Người dùng xác nhận cả bốn container đều healthy và Mailpit nhận được email reset.
+- Link trong email mở thành công; reset token biến mất khỏi address bar sau khi trang nạp.
+- Đổi mật khẩu thành công và đăng nhập bằng mật khẩu mới thành công.
+- Link reset đã dùng bị từ chối khi mở lại.
+- Không ghi mật khẩu hoặc reset token vào tài liệu. Đây là bằng chứng do người dùng thực hiện và xác nhận cho task `[Owner: User]` PRD-110.
+
 ## Ma trận tiêu chí chấp nhận
 
 | ID | Tình huống | Kết quả mong đợi | Kết quả thực tế | Trạng thái |
@@ -166,5 +175,5 @@ Lỗi hoặc giới hạn còn lại:
 
 ## Kết luận
 
-- Gate G1 tự động đã đạt trên local và GitHub, nhưng hệ thống chưa được tuyên bố production-ready vì các giai đoạn và follow-up bảo mật sau G1 còn mở.
-- Bước tiếp theo: người dùng thực hiện PRD-110; sau đó tiếp tục Giai đoạn 2 theo task/dependency đã duyệt.
+- Gate G1 và kiểm tra thủ công PRD-110 đã đạt, nhưng hệ thống chưa được tuyên bố production-ready vì các giai đoạn và follow-up bảo mật sau G1 còn mở.
+- Bước tiếp theo: tiếp tục Giai đoạn 2 theo task/dependency đã duyệt.
