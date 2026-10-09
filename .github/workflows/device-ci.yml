@@ -71,10 +71,13 @@ jobs:
         shell: bash
         run: |
           local_password="$(openssl rand -hex 32)"
+          local_jwt_key="$(openssl rand -hex 64)"
+          printf '::add-mask::%s\n' "${local_password}"
+          printf '::add-mask::%s\n' "${local_jwt_key}"
           printf 'LOCAL_DB_PASSWORD=%s\n' "${local_password}" >> "${GITHUB_ENV}"
           printf 'LOCAL_ADMIN_PASSWORD=%s\n' "${local_password}" >> "${GITHUB_ENV}"
           printf 'ADMIN_PASSWORD=%s\n' "${local_password}" >> "${GITHUB_ENV}"
-          printf 'LOCAL_JWT_SIGNER_KEY=%s\n' "$(openssl rand -hex 64)" >> "${GITHUB_ENV}"
+          printf 'LOCAL_JWT_SIGNER_KEY=%s\n' "${local_jwt_key}" >> "${GITHUB_ENV}"
       - run: npm ci
         working-directory: IdeaProjects/device/device/frontend
       - name: Install Playwright Chromium & dependencies

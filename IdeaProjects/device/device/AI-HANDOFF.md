@@ -140,4 +140,6 @@
 - `bash scripts/verify.sh safe` sau tích hợp: exit 0; backend compile, 15 backend test, 3 frontend test, lint và build 92 module đều đạt.
 - `bash scripts/verify.sh integration` sau tích hợp: exit 0; 31 test, MySQL 8.4.11 Testcontainers và Flyway V1/V2 đạt.
 - `source-map-js@1.2.2` là dependency bắc cầu `vite -> postcss`; `npm audit --audit-level=high` báo 0 vulnerability.
-- `.github/workflows/device-ci.yml` đã có bước cài Chromium và system dependencies trong `compose-smoke`. Trạng thái GitHub CI vẫn chờ push/PR và run thật.
+- `.github/workflows/device-ci.yml` đã có bước cài Chromium và system dependencies trong `compose-smoke`; GitHub đã chạy được qua cài browser và dựng full Compose trước khi phát hiện race của test.
+- PR #1 đã mở. Hai run đầu có `safe`/`integration` pass nhưng `compose-smoke` fail tại bước reset khôi phục do thiếu chờ route SPA; test đã được sửa để đợi `/forgot-password`, credential tạm trong workflow cũng đã được mask trước `GITHUB_ENV`.
+- Chromium E2E local sau race fix vẫn pass `1 passed (1.1m)`; cần xem rerun GitHub trên commit sửa trước khi tuyên bố `compose-smoke` xanh.

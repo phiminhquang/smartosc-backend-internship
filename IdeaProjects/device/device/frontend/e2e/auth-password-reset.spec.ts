@@ -274,6 +274,7 @@ test.describe('End-to-End Browser Authentication & Password Reset Flow', () => {
       await clearMailpitMessages()
 
       await page.click('a:has-text("Quên mật khẩu?")')
+      await expect(page).toHaveURL(`${origin}/forgot-password`)
       await page.fill('input[type="email"]', adminEmail)
       await page.click('button[type="submit"]')
       await expect(page.locator('p.success-message')).toBeVisible()

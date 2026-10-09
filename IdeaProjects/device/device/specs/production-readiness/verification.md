@@ -91,7 +91,9 @@
 - `bash scripts/verify.sh safe` sau tích hợp: exit 0; kiểm tra tài liệu/diff, backend compile, 15 backend test, 3 frontend contract/security test, lint và build 92 module đều đạt.
 - `bash scripts/verify.sh integration` sau tích hợp: exit 0; 31 test, 0 failure/error/skipped; MySQL 8.4.11 Testcontainers và Flyway V1/V2 đạt.
 - `npm ls source-map-js`: dependency bắc cầu `vite@8.3.1 -> postcss@8.5.28 -> source-map-js@1.2.2`. `npm audit --audit-level=high`: exit 0, `found 0 vulnerabilities`.
-- Workflow `compose-smoke` đã được bổ sung bước `npx playwright install --with-deps chromium` trước khi dựng Compose; chưa có GitHub run nên chưa tuyên bố ba job CI xanh.
+- Workflow `compose-smoke` đã được bổ sung bước `npx playwright install --with-deps chromium` trước khi dựng Compose; bước cài Chromium và dựng đủ stack đã chạy thành công trên GitHub.
+- GitHub push/PR run đầu tiên: `safe` và `integration` đều pass; `compose-smoke` fail ở bước self-healing do test chưa đợi React Router chuyển tới `/forgot-password` trước khi dùng selector chung. Đây là race condition của test, không phải failure nghiệp vụ reset chính.
+- Đã thêm assertion chờ đúng URL trước lần reset khôi phục và mask hai credential tạm trước khi ghi `GITHUB_ENV`. `bash scripts/verify.sh frontend-e2e` sau sửa tiếp tục exit 0, `1 passed (1.1m)`; GitHub rerun phải được kiểm tra trước khi đóng CI gate.
 
 ## Ma trận tiêu chí chấp nhận
 
