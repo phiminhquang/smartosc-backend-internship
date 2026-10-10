@@ -165,7 +165,7 @@
 - PRD-003, PRD-103, PRD-107 và phần tích hợp CI PRD-109 đã được kiểm tra; Playwright Chromium E2E local đã đạt.
 - Docker Engine/Compose và quyền user đã hoạt động; blocker Docker được gỡ. Full stack đạt bốn service healthy trong lần kiểm tra PRD-110.
 - Password reset đã có MySQL Testcontainers, full Compose, Playwright E2E, kiểm tra trình duyệt thủ công và GitHub CI xanh; JWT cũ trên Compose và PR-207/208/209 vẫn còn mở.
-- PRD-210 cần người dùng chạy/lưu ảnh trên máy đã ghi; local technical gate G2 đã có bằng chứng nhưng branch PRD-209 chưa commit/push/CI/PR.
+- PRD-210 cần người dùng chạy/lưu ảnh trên máy đã ghi; local technical gate G2 đã có bằng chứng và commit `37333db`, nhưng branch PRD-209 chưa push/CI/PR do GitHub CLI mất xác thực.
 - Chưa chọn provider demo; blocker này chỉ áp dụng Giai đoạn 6, không chặn local/test.
 
 ## Quy tắc cập nhật

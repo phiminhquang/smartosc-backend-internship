@@ -241,4 +241,4 @@ Lỗi hoặc giới hạn còn lại:
 ## Kết luận
 
 - Gate G1 và kiểm tra thủ công PRD-110 đã đạt, nhưng hệ thống chưa được tuyên bố production-ready vì các giai đoạn và follow-up bảo mật sau G1 còn mở.
-- Phần kỹ thuật PRD-201 đến PRD-209 và local integration PRD-211 đã có bằng chứng. Bước tiếp theo của Giai đoạn 2 là PRD-210 do người dùng xác nhận, rồi commit/push/CI/PR branch PRD-209 trước khi bắt đầu Giai đoạn 3.
+- Phần kỹ thuật PRD-201 đến PRD-209 và local integration PRD-211 đã có bằng chứng, commit local `37333db`. Bước tiếp theo của Giai đoạn 2 là PRD-210 do người dùng xác nhận, rồi push/CI/PR branch PRD-209 sau khi khôi phục GitHub auth trước khi bắt đầu Giai đoạn 3.
