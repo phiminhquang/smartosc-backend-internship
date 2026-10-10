@@ -4,7 +4,7 @@
 
 - Spec: Approved ngày 2026-10-08.
 - Implementation: Giai đoạn 0/1/2 đã hoàn tất; backend Giai đoạn 3 từ PRD-301 đến PRD-304 và phần integration PRD-307 đã hoàn tất. Frontend PRD-305 chưa bắt đầu theo yêu cầu người dùng.
-- Verification: Cổng `safe`, MySQL integration Flyway V1-V3, benchmark 100k do người dùng xác nhận, bốn race scenario backend, frontend static tests/build, local Compose bốn service, Playwright Chromium E2E và GitHub CI đến PR #5 đều đạt.
+- Verification: Cổng `safe`, MySQL integration Flyway V1-V3, benchmark 100k do người dùng xác nhận, bốn race scenario backend, frontend static tests/build, local Compose bốn service, Playwright Chromium E2E và GitHub CI đến PR #6 đều đạt.
 - Feature password reset vẫn là công việc đang Verifying và là dependency của Giai đoạn 1/4.
 
 ## Ký hiệu owner và cách làm

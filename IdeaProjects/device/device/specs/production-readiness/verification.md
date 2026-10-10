@@ -28,7 +28,7 @@
 | Compose local smoke | Build/start + frontend/API/Mailpit | Thành công | 4 service healthy; SPA route/header và API smoke qua Nginx proxy đạt |
 | Browser E2E | `bash scripts/verify.sh frontend-e2e` | Thành công | Playwright Chromium, 1 test pass trong 1.1 phút; điều khiển DOM thật qua full Compose |
 | Browser manual PRD-110 | Người dùng chạy full Compose và kiểm tra qua trình duyệt/Mailpit | Thành công | 4 container healthy; email/link/reset/login đạt; token biến mất khỏi URL; link cũ bị từ chối |
-| GitHub Device CI | `safe`, `integration`, `compose-smoke` | Thành công | PR #5 có đủ sáu check push/PR xanh và đã merge vào `main` tại `681ab42` |
+| GitHub Device CI | `safe`, `integration`, `compose-smoke` | Thành công | PR #6 có đủ sáu check push/PR xanh; post-merge run `38040530264` trên `main` cũng xanh |
 | Data-scale benchmark | Dataset/máy/lệnh phải được ghi | Thành công | Baseline 1k/10k/100k, raw latency, heap/RSS và plan lưu tại `docs/benchmarks/device-scale-baseline-2026-10-09.md` |
 | Device query index benchmark | `bash scripts/benchmark-device-query-index.sh --confirm-isolated` | Thành công | 100k trước/sau, 2 chu kỳ x 3 lần đo; report tại `docs/benchmarks/device-query-index-comparison-2026-10-10.md` |
 | Concurrent requests | MySQL integration test thật | Thành công | 4/4 race test và full suite 46/46 đạt; mỗi scenario đúng một HTTP 200 và một HTTP 409 |
@@ -243,6 +243,7 @@ Lỗi hoặc giới hạn còn lại:
 - Focused suite cuối: 4/4 test đạt, 0 failure/error/skip. Full `bash scripts/verify.sh integration`: exit 0; 46/46 test đạt, 0 failure/error/skip; Flyway V1/V2/V3 áp dụng trên database cô lập; tổng thời gian 2 phút 27 giây.
 - Cổng cuối `bash scripts/verify.sh safe`: exit 0; kiểm tra tài liệu/diff, backend compile, 20 backend test, generator/benchmark isolation guards, 3 frontend test, lint và build 92 module đều đạt.
 - Error contract: assign code 1022, return 1029, extension 1035, repair 1046 đều HTTP 409; optimistic conflict ngoài bốn trạng thái trên tiếp tục code 1053/HTTP 409. Response không lộ exception/database internals.
+- PR #6 merge commit `bf2add0e6776b8b9504af505f2ffe98dba85048c`; sáu check push/PR đều đạt. Post-merge Device CI run `38040530264` đạt `safe` trong 47 giây, `integration` trong 1 phút 18 giây và `compose-smoke` trong 2 phút 12 giây.
 - Không sửa `frontend/`. PRD-305 vẫn mở và chưa được gửi cho Antigravity theo yêu cầu người dùng; PRD-306 vẫn cần người dùng chạy demo thủ công.
 
 ## Lần chạy baseline 2026-10-08
