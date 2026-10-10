@@ -244,7 +244,8 @@ Lỗi hoặc giới hạn còn lại:
 - Cổng cuối `bash scripts/verify.sh safe`: exit 0; kiểm tra tài liệu/diff, backend compile, 20 backend test, generator/benchmark isolation guards, 3 frontend test, lint và build 92 module đều đạt.
 - Error contract: assign code 1022, return 1029, extension 1035, repair 1046 đều HTTP 409; optimistic conflict ngoài bốn trạng thái trên tiếp tục code 1053/HTTP 409. Response không lộ exception/database internals.
 - PR #6 merge commit `bf2add0e6776b8b9504af505f2ffe98dba85048c`; sáu check push/PR đều đạt. Post-merge Device CI run `38040530264` đạt `safe` trong 47 giây, `integration` trong 1 phút 18 giây và `compose-smoke` trong 2 phút 12 giây.
-- Không sửa `frontend/`. PRD-305 vẫn mở và chưa được gửi cho Antigravity theo yêu cầu người dùng; PRD-306 vẫn cần người dùng chạy demo thủ công.
+- Review PRD-305 xác nhận `App.tsx` chỉ có dashboard thiết bị và các route xác thực; `deviceService.ts` chỉ gọi API `/devices`. Không có màn hình, type hoặc API call frontend cho assignment, return, extension hay repair, nên không có submit flow để ánh xạ bốn conflict code hoặc refresh.
+- Các form hiện có đã chống submit lặp bằng state và thuộc tính `disabled`: login, forgot password và reset password dùng `submitting`; tạo device dùng `creating`. PRD-305 và G3-3 được đóng N/A, không sửa `frontend/` và không tạo màn hình ngoài phạm vi. PRD-306 vẫn cần người dùng chạy demo thủ công.
 
 ## Lần chạy baseline 2026-10-08
 
@@ -257,5 +258,5 @@ Lỗi hoặc giới hạn còn lại:
 
 ## Kết luận
 
-- Gate G1 và G2 đã đạt. Backend của Giai đoạn 3 (PRD-301 đến PRD-304) cùng integration PRD-307 đã có bằng chứng, nhưng hệ thống chưa được tuyên bố production-ready vì PRD-305/306 và các giai đoạn 4-7 còn mở.
-- Nhánh hiện tại chỉ thay đổi backend/test/tài liệu chung. Frontend PRD-305 chưa bắt đầu theo yêu cầu người dùng.
+- Gate G1 và G2 đã đạt. Backend của Giai đoạn 3 (PRD-301 đến PRD-304), integration PRD-307 và review N/A PRD-305 đã có bằng chứng; Giai đoạn 3 chỉ còn demo PRD-306.
+- Không sửa frontend trong lượt review PRD-305. Hệ thống chưa được tuyên bố production-ready vì PRD-306 và các giai đoạn 4-7 còn mở.

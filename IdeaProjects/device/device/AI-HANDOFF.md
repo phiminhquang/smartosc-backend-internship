@@ -2,8 +2,8 @@
 
 ## Mục tiêu hiện tại
 
-- Backend Giai đoạn 3 production-readiness đã hoàn tất và merge; chờ người dùng chọn tiếp PRD-305 frontend hoặc demo PRD-306.
-- Không sửa hoặc giao việc frontend PRD-305 cho Antigravity cho tới khi người dùng yêu cầu.
+- Backend Giai đoạn 3 production-readiness đã hoàn tất và merge; PRD-305 đã đóng N/A, chỉ còn người dùng demo PRD-306.
+- Không tạo màn hình assignment/return/extension/repair ngoài phạm vi chỉ để xử lý PRD-305.
 
 ## Trạng thái hiện tại
 
@@ -14,7 +14,8 @@
 - `bash scripts/verify.sh integration` ngày 2026-10-10 đạt 46/46 test trên MySQL 8.4.11, Flyway V1/V2/V3; tổng thời gian 2 phút 27 giây. Cổng `bash scripts/verify.sh safe` cuối cùng cũng đạt: 20 backend test, generator/benchmark guards, 3 frontend test, lint/build 92 module.
 - PR #6 có đủ sáu check push/PR xanh. Post-merge Device CI run `38040530264` trên `main` cũng đạt `safe` 47 giây, `integration` 1 phút 18 giây và `compose-smoke` 2 phút 12 giây.
 - PR #3 đã merge PRD-206/207 vào `main` tại `9b9e4fd`; post-merge Device CI run `37910483706` đạt `safe` 35 giây, `integration` 1 phút 18 giây và `compose-smoke` 2 phút 34 giây.
-- Giai đoạn 2 đã hoàn tất. Giai đoạn 3 còn PRD-305 phía frontend và PRD-306 do người dùng demo; theo yêu cầu hiện tại chưa giao việc cho Antigravity.
+- Giai đoạn 2 đã hoàn tất. Review frontend xác nhận không có màn hình/API call cho assignment, return, extension hoặc repair; các form hiện có đã có double-submit guard, nên PRD-305 và G3-3 đóng N/A mà không sửa `frontend/`.
+- Giai đoạn 3 chỉ còn PRD-306 do người dùng demo hai request đồng thời và kiểm tra trạng thái database.
 - Chưa sẵn sàng public production vì Giai đoạn 3-7 và các follow-up bảo mật còn mở.
 - Phân công mặc định và ranh giới chỉnh sửa tuân theo `AGENTS.md`; hiện không có ngoại lệ đang hoạt động.
 
@@ -44,10 +45,9 @@
 
 ## Việc tiếp theo
 
-1. Chỉ giao PRD-305 cho Antigravity khi người dùng yêu cầu; Codex không sửa `frontend/`.
-2. Hướng dẫn người dùng chạy demo PRD-306 và chỉ đánh dấu hoàn thành sau khi có xác nhận thật.
-3. Sau khi chốt Giai đoạn 3, chuẩn bị ADR cho email job/outbox của PRD-401; chưa tạo migration trước khi người dùng duyệt PRD-402.
-4. Trước public production, hoàn tất PR-207/208/209 trong password-reset `tasks.md`; không tuyên bố production-ready chỉ từ Gate G1-G3.
+1. Hướng dẫn người dùng chạy demo PRD-306 và chỉ đánh dấu hoàn thành sau khi có xác nhận thật.
+2. Sau khi chốt Giai đoạn 3, chuẩn bị ADR cho email job/outbox của PRD-401; chưa tạo migration trước khi người dùng duyệt PRD-402.
+3. Trước public production, hoàn tất PR-207/208/209 trong password-reset `tasks.md`; không tuyên bố production-ready chỉ từ Gate G1-G3.
 
 ## Cảnh báo vận hành
 
