@@ -132,6 +132,13 @@ Prometheus/Grafana <--- health and metrics
 
 - Không còn collection không giới hạn trong phạm vi; file lớn không bắt buộc nằm toàn bộ trong heap; có báo cáo đo lặp lại được.
 
+### Kết quả quyết định PRD-209
+
+- Thêm duy nhất Flyway V3 `CREATE INDEX idx_devices_name ON devices (name)` vì benchmark 100k chứng minh trang đầu cải thiện rõ và `EXPLAIN ANALYZE` dùng index.
+- Keyword giữ `ORDER BY LOWER(name), id` để leading-wildcard không bị optimizer kéo qua ordered B-tree scan; integration test bảo vệ thứ tự mixed-case và count query.
+- Không thêm deferred join/full-text ở Giai đoạn 2: deep offset không cải thiện trong phép đo và keyword vẫn nằm ngoài khả năng seek của B-tree thường.
+- Trước khi migration áp dụng có thể rollback branch/code. Sau khi V3 đã áp dụng, rollback schema cần migration/quy trình đã duyệt với `DROP INDEX idx_devices_name ON devices`; không sửa hoặc xóa V3 đã phát hành.
+
 ## Giai đoạn 3: Tính đúng đắn khi thao tác đồng thời
 
 ### Codex thực hiện

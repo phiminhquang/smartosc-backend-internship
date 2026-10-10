@@ -77,10 +77,20 @@ class DeviceApplicationTests {
 	}
 
 	@Test
-	void flywayAppliesBothMigrationsToDisposableMySql() {
+	void flywayAppliesAllMigrationsAndDeviceNameIndexToDisposableMySql() {
 		Integer appliedMigrations = jdbcTemplate.queryForObject(
 				"SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1", Integer.class);
-		assertEquals(2, appliedMigrations);
+		assertEquals(3, appliedMigrations);
+
+		Integer deviceNameIndexColumns = jdbcTemplate.queryForObject("""
+				SELECT COUNT(*)
+				FROM information_schema.statistics
+				WHERE table_schema = DATABASE()
+				  AND table_name = 'devices'
+				  AND index_name = 'idx_devices_name'
+				  AND column_name = 'name'
+				""", Integer.class);
+		assertEquals(1, deviceNameIndexColumns);
 	}
 
 	@Test

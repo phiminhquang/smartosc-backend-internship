@@ -217,6 +217,37 @@ class PaginationApiIntegrationTest {
 
     @Test
     @WithMockUser(username = EMPLOYEE_EMAIL, roles = {"ADMIN", "IT_STAFF", "EMPLOYEE"})
+    void deviceKeywordSearchKeepsCaseInsensitiveNameOrderWithTheNameIndex() throws Exception {
+        deviceRepository.saveAllAndFlush(List.of(
+                Device.builder()
+                        .category(DeviceCategory.MONITOR)
+                        .serialNumber("CASE-ORDER-0002")
+                        .name("case zulu")
+                        .model("Case Search")
+                        .state(DeviceState.AVAILABLE)
+                        .build(),
+                Device.builder()
+                        .category(DeviceCategory.PHONE)
+                        .serialNumber("CASE-ORDER-0001")
+                        .name("CASE Alpha")
+                        .model("Case Search")
+                        .state(DeviceState.AVAILABLE)
+                        .build()
+        ));
+
+        mockMvc.perform(get("/api/devices")
+                        .param("keyword", "  cAsE  ")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result.content.length()").value(2))
+                .andExpect(jsonPath("$.result.content[0].name").value("CASE Alpha"))
+                .andExpect(jsonPath("$.result.content[1].name").value("case zulu"))
+                .andExpect(jsonPath("$.result.totalElements").value(2));
+    }
+
+    @Test
+    @WithMockUser(username = EMPLOYEE_EMAIL, roles = {"ADMIN", "IT_STAFF", "EMPLOYEE"})
     void deviceFileBatchQueriesAndImportRunAgainstMysql() {
         deviceRepository.saveAllAndFlush(List.of(
                 Device.builder()

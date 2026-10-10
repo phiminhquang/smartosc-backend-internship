@@ -97,13 +97,19 @@ test_data_generator() {
 
 test_benchmark_guard() {
     bash scripts/benchmark-device-scale.sh --help >/dev/null
+    bash scripts/benchmark-device-query-index.sh --help >/dev/null
 
     if bash scripts/benchmark-device-scale.sh >/dev/null 2>&1; then
         printf '%s\n' 'Device scale benchmark ran without --confirm-isolated.' >&2
         return 1
     fi
 
-    printf '%s\n' 'Device scale benchmark isolation guard checks passed.'
+    if bash scripts/benchmark-device-query-index.sh >/dev/null 2>&1; then
+        printf '%s\n' 'Device query index benchmark ran without --confirm-isolated.' >&2
+        return 1
+    fi
+
+    printf '%s\n' 'Device benchmark isolation guard checks passed.'
 }
 
 check_frontend() {

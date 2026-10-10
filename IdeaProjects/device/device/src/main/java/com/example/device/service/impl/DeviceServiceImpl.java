@@ -21,6 +21,7 @@ import com.example.device.service.PaginationSupport;
 import com.example.device.specification.DeviceSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -154,20 +155,27 @@ public class DeviceServiceImpl implements DeviceService {
             int page,
             int size) {
 
+        String normalizedKeyword = PaginationSupport.normalizeKeyword(keyword);
         Specification<Device> spec = Specification.allOf(
-                DeviceSpecification.hasKeyword(PaginationSupport.normalizeKeyword(keyword)),
+                DeviceSpecification.hasKeyword(normalizedKeyword),
                 DeviceSpecification.hasState(state),
                 DeviceSpecification.hasCategory(category)
         );
 
-        Pageable pageable = PaginationSupport.pageRequest(
-                page,
-                size,
-                null,
-                Map.of("name", "name"),
-                "name",
-                Sort.Direction.ASC
-        );
+        Pageable pageable;
+        if (normalizedKeyword != null) {
+            spec = spec.and(DeviceSpecification.orderByCaseFoldedName());
+            pageable = PageRequest.of(page, size);
+        } else {
+            pageable = PaginationSupport.pageRequest(
+                    page,
+                    size,
+                    null,
+                    Map.of("name", "name"),
+                    "name",
+                    Sort.Direction.ASC
+            );
+        }
 
         return deviceRepository.findAll(spec, pageable)
                 .map(deviceMapper::toDeviceResponse);

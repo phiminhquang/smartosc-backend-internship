@@ -18,10 +18,10 @@
 | Kiểm tra | Lệnh/kịch bản | Kết quả | Bằng chứng/Ghi chú |
 |---|---|---|---|
 | Tài liệu/diff sau khi tạo spec | `git diff --check` | Thành công | Không có lỗi whitespace trong tracked diff |
-| Cổng an toàn hiện tại | `bash scripts/verify.sh safe` | Thành công | Baseline ngày 2026-10-08; không thay thế integration/E2E còn thiếu |
+| Cổng an toàn hiện tại | `bash scripts/verify.sh safe` | Thành công | 2026-10-10: compile, 20 backend test, generator/benchmark guards, 3 frontend test, lint/build 92 module |
 | Backend compile | Chạy bởi `bash scripts/verify.sh safe` | Thành công | Maven `BUILD SUCCESS` |
-| MySQL migration/integration | `bash scripts/verify.sh integration` | Thành công | 31 test; MySQL 8.4.11 tạm; Flyway V1/V2 |
-| Backend test mục tiêu | Chạy bởi `bash scripts/verify.sh safe` | 15 thành công | 0 failure, 0 error, 0 skipped |
+| MySQL migration/integration | `bash scripts/verify.sh integration` | Thành công | 2026-10-10: 42 test; MySQL 8.4.11 tạm; Flyway V1/V2/V3 |
+| Backend test mục tiêu | Chạy bởi `bash scripts/verify.sh safe` | 20 thành công | 0 failure, 0 error, 0 skipped |
 | Frontend contract/security tests | `node --test` qua `scripts/verify.sh` | Thành công | 3 file static/contract; không thay thế browser test |
 | Frontend lint | Chạy bởi `bash scripts/verify.sh safe` | Thành công | Oxlint không báo lỗi |
 | Frontend build | Chạy bởi `bash scripts/verify.sh safe` | Thành công | TypeScript/Vite, 92 module transformed |
@@ -30,6 +30,7 @@
 | Browser manual PRD-110 | Người dùng chạy full Compose và kiểm tra qua trình duyệt/Mailpit | Thành công | 4 container healthy; email/link/reset/login đạt; token biến mất khỏi URL; link cũ bị từ chối |
 | GitHub Device CI | `safe`, `integration`, `compose-smoke` | Thành công | Push run và PR run của commit `5837be2` đều xanh |
 | Data-scale benchmark | Dataset/máy/lệnh phải được ghi | Thành công | Baseline 1k/10k/100k, raw latency, heap/RSS và plan lưu tại `docs/benchmarks/device-scale-baseline-2026-10-09.md` |
+| Device query index benchmark | `bash scripts/benchmark-device-query-index.sh --confirm-isolated` | Thành công | 100k trước/sau, 2 chu kỳ x 3 lần đo; report tại `docs/benchmarks/device-query-index-comparison-2026-10-10.md` |
 | Concurrent requests | MySQL integration test thật | Chưa chạy | |
 | SMTP failure/recovery | Tắt/bật SMTP test | Chưa chạy | |
 | Backup/restore | Restore vào database cô lập và kiểm tra | Chưa chạy | |
@@ -136,13 +137,13 @@
 | ID | Tình huống | Kết quả mong đợi | Kết quả thực tế | Trạng thái |
 |---|---|---|---|---|
 | V-01 | Máy sạch khởi động stack | Frontend, backend, MySQL, Mailpit healthy bằng quy trình tài liệu hóa | Cả 4 service healthy trên máy local; chưa có clean-machine run | Một phần |
-| V-02 | Full test/migration | Chỉ dùng MySQL cô lập, không thể chạm Aiven ngoài ý muốn | 34 test đạt trên MySQL Testcontainers, Flyway V1/V2; biến DB môi trường bị bỏ | Đạt |
+| V-02 | Full test/migration | Chỉ dùng MySQL cô lập, không thể chạm Aiven ngoài ý muốn | 42 test đạt trên MySQL Testcontainers, Flyway V1/V2/V3; biến DB môi trường bị bỏ | Đạt |
 | V-03 | Password reset E2E | Email/link/reset/login/token revocation đúng contract | Playwright Chromium đạt email/link/reset/login, URL/referrer và mật khẩu cũ/mới; JWT cũ có backend test nhưng chưa kiểm tra trên browser/Compose | Một phần |
-| V-04 | API list với dữ liệu lớn | Trả page có giới hạn/filter/sort đúng contract | MySQL 8.4.11 đạt tới 100k row; median page đầu 438,772 ms, deep page 616,170 ms tại 100k | Đạt |
+| V-04 | API list với dữ liệu lớn | Trả page có giới hạn/filter/sort đúng contract | MySQL 8.4.11 đạt 100k row; so sánh PRD-209: page đầu 447,520 -> 50,178 ms, deep page 608,277 -> 624,786 ms | Đạt |
 | V-05 | Request size quá giới hạn | Bị từ chối hoặc giới hạn theo contract | `size=101` trên users và devices trả HTTP 400/code 1055 trong integration test | Đạt |
 | V-06 | Export dữ liệu lớn | Không bắt buộc nạp toàn bảng vào heap; file đúng | 100k: CSV median 1.669,511 ms/peak heap delta 123,444 MiB; XLSX median 6.806,224 ms/117 MiB; output đã có unit/integration test đúng định dạng | Đạt |
 | V-07 | Import file lớn/lỗi dòng | Xử lý theo giới hạn và báo lỗi xác định | 100k CSV 7.100.032 byte import đủ trong 225,443 giây; peak heap delta 117,122 MiB; rollback/header/BOM/size đã có integration/unit test | Đạt |
-| V-08 | Query trước/sau index | Có query plan, dataset và số đo lặp lại được | Baseline trước index và plan 1k/10k/100k đã lưu; so sánh sau index chờ PRD-209 | Một phần |
+| V-08 | Query trước/sau index | Có query plan, dataset và số đo lặp lại được | 100k, hai chu kỳ x ba lần: page đầu cải thiện 88,79% và plan dùng `idx_devices_name`; keyword +9,45%, deep page -2,71%; report đầy đủ đã lưu | Đạt |
 | V-09 | Hai request assign cùng device | Chỉ một kết quả hợp lệ; không có hai assignment mở | Chưa chạy | Chưa chạy |
 | V-10 | Hai request return/review/repair | State transition không bị lặp hoặc mâu thuẫn | Chưa chạy | Chưa chạy |
 | V-11 | SMTP tắt khi tạo email | Nghiệp vụ/job theo contract; job không mất | Chưa chạy | Chưa chạy |
@@ -183,8 +184,9 @@ Lỗi hoặc giới hạn còn lại:
 - MySQL Testcontainers, Mailpit và Playwright Chromium đã chạy local; GitHub hosted runner đã checkout sạch, tạo volume mới và chạy đủ ba job CI thành công.
 - `DeviceApplicationTests` đã chạy runtime với Testcontainers và không dùng datasource ngoài.
 - Email hiện còn đồng bộ trong request/transaction ở các luồng quan trọng.
-- Tám collection PRD-201 đã có phân trang. Export thiết bị không còn dùng `findAll()`/`byte[]`; CSV/XLSX stream theo keyset batch, nhưng chưa có số đo dataset lớn PRD-208.
-- Chưa có kết quả concurrent integration test, benchmark, backup/restore hoặc deploy demo.
+- Tám collection PRD-201 đã có phân trang. Export thiết bị không còn dùng `findAll()`/`byte[]`; CSV/XLSX stream theo keyset batch và đã có số đo 100k.
+- Index `devices(name)` tối ưu trang đầu. Deep offset vẫn scan/sort toàn bảng và keyword leading-wildcard vẫn table scan; deferred join/full-text chưa được thêm vì ngoài bằng chứng và phạm vi hiện tại.
+- Chưa có kết quả concurrent integration test, backup/restore hoặc deploy demo.
 
 ## PRD-206/207 — Import/export giới hạn tài nguyên và data generator ngày 2026-10-09
 
@@ -213,6 +215,20 @@ Lỗi hoặc giới hạn còn lại:
 - `bash scripts/verify.sh integration` exit 0; 41/41 test đạt, 0 failure/error/skip trên MySQL 8.4.11 Testcontainers; Flyway V1/V2 đạt. `DeviceScaleBenchmarkIT` không thuộc suite mặc định và chỉ chạy khi được gọi rõ qua script có safety guard.
 - GitHub Device CI push run `37940116019` tại commit `cd1ccbb` đạt `safe` 39 giây, `integration` 1 phút 12 giây và `compose-smoke` 5 phút 39 giây trên runner `ubuntu-24.04`.
 
+## PRD-209 — Index truy vấn thiết bị ngày 2026-10-10
+
+- Lệnh cuối: `bash scripts/benchmark-device-query-index.sh --confirm-isolated --output target/benchmarks/device-query-index-comparison.md --force`; exit 0, `DeviceQueryIndexBenchmarkIT` 1/1 test đạt, Maven total 1 phút 59 giây.
+- Môi trường: Linux `7.0.0-34-generic` amd64, Java 17.0.20.1, MySQL 8.4.11 Testcontainers, database dùng một lần `device_test`, 100.000 device tổng hợp; warm-up 2, ghi 3 lần, 2 chu kỳ baseline/indexed.
+- Candidate tối thiểu `CREATE INDEX idx_devices_name ON devices (name)` được triển khai bằng `V3__device_name_index.sql`. Trên bảng 100k, tạo index mất 916,747 và 869,184 ms ở hai chu kỳ local.
+- Median application `Page`: trang đầu 447,520 -> 50,178 ms (cải thiện 88,79%); deep page 608,277 -> 624,786 ms (giảm 2,71%); keyword cuối bảng 454,039 -> 411,118 ms (cải thiện 9,45%).
+- `EXPLAIN ANALYZE`: trang đầu đổi từ table scan 100k + sort sang index scan `idx_devices_name` và trả 100 row trong khoảng 6-9 ms ở hai plan. Deep page vẫn table scan + sort; index không được tuyên bố giải quyết deep offset.
+- Lần thử đầu cho thấy `ORDER BY name` khiến keyword leading-wildcard chọn ordered index scan rất chậm. Production query keyword được giữ thứ tự case-insensitive xác định bằng `ORDER BY LOWER(name), id`, buộc plan phù hợp quay lại table scan + sort; integration test xác nhận keyword mixed-case và count đúng.
+- Harness seed dùng multi-row JDBC insert 1.000 row/lô để phần chuẩn bị không chi phối thời gian chạy; harness chỉ drop/recreate candidate index sau khi tự xác nhận datasource Testcontainers.
+- Report nguyên vẹn: `docs/benchmarks/device-query-index-comparison-2026-10-10.md`. Đây là số đo local, không phải SLA/capacity production.
+- `bash scripts/verify.sh safe`: exit 0; compile, 20 backend test, generator/benchmark guards, 3 frontend test, lint và build 92 module đạt.
+- `bash scripts/verify.sh integration`: exit 0; 42/42 test đạt trên MySQL 8.4.11; Flyway áp dụng V1/V2/V3 và test xác nhận `idx_devices_name` trong `information_schema`.
+- Không sửa `frontend/` hoặc `.env`. Rollback code trước merge là bỏ V3 cùng logic keyword; sau khi V3 đã áp dụng, rollback schema thủ công tương ứng là `DROP INDEX idx_devices_name ON devices`, chỉ thực hiện theo quy trình migration/rollback đã duyệt.
+
 ## Lần chạy baseline 2026-10-08
 
 - Phạm vi: kiểm tra tài liệu/diff, backend compile, nhóm test password reset/JWT/security và frontend lint/build.
@@ -225,4 +241,4 @@ Lỗi hoặc giới hạn còn lại:
 ## Kết luận
 
 - Gate G1 và kiểm tra thủ công PRD-110 đã đạt, nhưng hệ thống chưa được tuyên bố production-ready vì các giai đoạn và follow-up bảo mật sau G1 còn mở.
-- Bước tiếp theo: PRD-206/207 cho import-export và data generator, sau đó thu baseline PRD-208 trước khi quyết định index PRD-209.
+- Phần kỹ thuật PRD-201 đến PRD-209 và local integration PRD-211 đã có bằng chứng, commit local `37333db`. Bước tiếp theo của Giai đoạn 2 là PRD-210 do người dùng xác nhận, rồi push/CI/PR branch PRD-209 sau khi khôi phục GitHub auth trước khi bắt đầu Giai đoạn 3.
