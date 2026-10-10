@@ -3,7 +3,7 @@
 ## Trạng thái tổng thể
 
 - Spec: Approved ngày 2026-10-08.
-- Implementation: Giai đoạn 0/1/2 đã hoàn tất; backend Giai đoạn 3 từ PRD-301 đến PRD-304 và phần integration PRD-307 đã hoàn tất. Frontend PRD-305 chưa bắt đầu theo yêu cầu người dùng.
+- Implementation: Giai đoạn 0/1/2 đã hoàn tất; backend Giai đoạn 3 từ PRD-301 đến PRD-304 và phần integration PRD-307 đã hoàn tất. PRD-305 đóng N/A sau review frontend; Giai đoạn 3 chỉ còn demo PRD-306 của người dùng.
 - Verification: Cổng `safe`, MySQL integration Flyway V1-V3, benchmark 100k do người dùng xác nhận, bốn race scenario backend, frontend static tests/build, local Compose bốn service, Playwright Chromium E2E và GitHub CI đến PR #6 đều đạt.
 - Feature password reset vẫn là công việc đang Verifying và là dependency của Giai đoạn 1/4.
 
@@ -86,7 +86,7 @@
 - [x] PRD-302 `[Owner: Codex] [AI thực hiện]` Test đồng thời cho return, extension approve/reject và repair complete/unrepairable đều đạt trên MySQL thật.
 - [x] PRD-303 `[Owner: Codex] [AI thực hiện]` Luồng assign dùng pessimistic write lock đã có ở repository; các luồng còn lại giữ lock hiện hữu. Không thêm constraint/migration vì test dữ liệu không phát hiện invariant bị phá vỡ.
 - [x] PRD-304 `[Owner: Codex] [AI thực hiện]` Conflict contract chốt HTTP `409`: codes `1022`, `1029`, `1035`, `1046`; optimistic conflict chung tiếp tục code `1053`. Integration test kiểm tra HTTP và code.
-- [ ] PRD-305 `[Owner: Antigravity] [AI thực hiện]` Chặn submit lặp, hiển thị conflict và refresh dữ liệu. Phụ thuộc: PRD-304.
+- [x] PRD-305 `[Owner: Antigravity] [AI thực hiện]` Đóng N/A: frontend hiện không có màn hình hoặc API call cho assignment, return, extension và repair; các form hiện có đã disable submit trong lúc request đang chạy nên không cần sửa `frontend/`.
 - [ ] PRD-306 `[Owner: User] [AI hướng dẫn]` Chạy demo hai request đồng thời và kiểm tra trạng thái database.
 - [x] PRD-307 `[Owner: Integration]` Focused concurrency suite và full integration đều đạt; assertions đọc lại database xác nhận assignment/state/deadline/final repair state nhất quán.
 
@@ -94,7 +94,7 @@
 
 - [x] G3-1 Chỉ kết quả hợp lệ được commit trong bốn scenario backend đã duyệt.
 - [x] G3-2 Không có active assignment/transition mâu thuẫn do race trong MySQL integration test.
-- [ ] G3-3 Frontend không báo thành công giả hoặc gửi lặp không cần thiết.
+- [x] G3-3 Đóng N/A cho bốn transition concurrency vì frontend chưa cung cấp các thao tác này; các form hiện có đã có double-submit guard.
 
 ## Giai đoạn 4 — Email nền và rate limit
 
@@ -166,7 +166,7 @@
 - Docker Engine/Compose và quyền user đã hoạt động; blocker Docker được gỡ. Full stack đạt bốn service healthy trong lần kiểm tra PRD-110.
 - Password reset đã có MySQL Testcontainers, full Compose, Playwright E2E, kiểm tra trình duyệt thủ công và GitHub CI xanh; JWT cũ trên Compose và PR-207/208/209 vẫn còn mở.
 - Giai đoạn 2 đã đóng: PRD-210 được người dùng xác nhận; PR #5 đã merge vào `main` tại `681ab42` với sáu check xanh.
-- Giai đoạn 3 còn PRD-305 phía frontend và PRD-306 do người dùng chạy demo. Theo yêu cầu hiện tại, chưa gửi task cho Antigravity và không sửa `frontend/`.
+- PRD-305 đã đóng N/A sau review frontend; Giai đoạn 3 chỉ còn PRD-306 do người dùng chạy demo.
 - Chưa chọn provider demo; blocker này chỉ áp dụng Giai đoạn 6, không chặn local/test.
 
 ## Quy tắc cập nhật
