@@ -38,12 +38,12 @@ public enum ErrorCode {
     INVALID_DEVICE_STATE(1019, "Trạng thái thiết bị không hợp lệ", HttpStatus.BAD_REQUEST),
     DEVICE_NOT_FOUND(1020, "Không tìm thấy thiết bị", HttpStatus.NOT_FOUND),
     SERIAL_NUMBER_EXISTED(1021, "Serial number đã tồn tại", HttpStatus.BAD_REQUEST),
-    DEVICE_NOT_AVAILABLE(1022, "Thiết bị hiện không khả dụng", HttpStatus.BAD_REQUEST),
+    DEVICE_NOT_AVAILABLE(1022, "Thiết bị hiện không khả dụng", HttpStatus.CONFLICT),
 
     // Assignment
     ASSIGNMENT_NOT_FOUND(1023, "Không tìm thấy thông tin cấp phát", HttpStatus.NOT_FOUND),
     INVALID_RETURN_DATE(1028, "Thời gian trả thiết bị không hợp lệ", HttpStatus.BAD_REQUEST),
-    DEVICE_ALREADY_RETURNED(1029, "Thiết bị đã được trả", HttpStatus.BAD_REQUEST),
+    DEVICE_ALREADY_RETURNED(1029, "Thiết bị đã được trả", HttpStatus.CONFLICT),
 
     // System owner
     SYSTEM_OWNER_REQUIRED(1024, "Chỉ quản trị viên hệ thống mới được thực hiện thao tác này", HttpStatus.FORBIDDEN),
@@ -57,7 +57,7 @@ public enum ErrorCode {
 
     EXTENSION_REQUEST_NOT_FOUND(1033, "Không tìm thấy yêu cầu gia hạn", HttpStatus.NOT_FOUND),
     EXTENSION_REQUEST_ALREADY_PENDING(1034, "Assignment đã có yêu cầu gia hạn đang chờ xử lý", HttpStatus.BAD_REQUEST),
-    EXTENSION_REQUEST_ALREADY_REVIEWED(1035, "Yêu cầu gia hạn đã được xử lý", HttpStatus.BAD_REQUEST),
+    EXTENSION_REQUEST_ALREADY_REVIEWED(1035, "Yêu cầu gia hạn đã được xử lý", HttpStatus.CONFLICT),
     INVALID_EXTENSION_DATE(1036, "Thời hạn gia hạn phải lớn hơn thời hạn hiện tại", HttpStatus.BAD_REQUEST),
     CANNOT_EXTEND_RETURNED_ASSIGNMENT(1037, "Không thể gia hạn thiết bị đã được trả", HttpStatus.BAD_REQUEST),
 
@@ -71,7 +71,7 @@ public enum ErrorCode {
     DEVICE_NOT_UNDER_REPAIR(1043, "Thiết bị không ở trạng thái sửa chữa", HttpStatus.BAD_REQUEST),
     REPAIR_ALREADY_OPEN(1044, "Thiết bị đã có phiếu sửa chữa đang xử lý", HttpStatus.BAD_REQUEST),
     REPAIR_CANNOT_START(1045, "Chỉ phiếu PENDING mới có thể bắt đầu sửa", HttpStatus.BAD_REQUEST),
-    REPAIR_CANNOT_FINISH(1046, "Chỉ phiếu IN_PROGRESS mới có thể kết thúc", HttpStatus.BAD_REQUEST),
+    REPAIR_CANNOT_FINISH(1046, "Chỉ phiếu IN_PROGRESS mới có thể kết thúc", HttpStatus.CONFLICT),
 
     DEVICE_HAS_REPAIR_HISTORY(1047, "Không thể xóa thiết bị đã có lịch sử sửa chữa", HttpStatus.BAD_REQUEST),
     DEVICE_STATE_MANAGED_BY_REPAIR(1048, "Trạng thái thiết bị đang được quản lý bởi quy trình sửa chữa", HttpStatus.BAD_REQUEST),

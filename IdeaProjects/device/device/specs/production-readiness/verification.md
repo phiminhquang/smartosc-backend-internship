@@ -20,7 +20,7 @@
 | Tài liệu/diff sau khi tạo spec | `git diff --check` | Thành công | Không có lỗi whitespace trong tracked diff |
 | Cổng an toàn hiện tại | `bash scripts/verify.sh safe` | Thành công | 2026-10-10: compile, 20 backend test, generator/benchmark guards, 3 frontend test, lint/build 92 module |
 | Backend compile | Chạy bởi `bash scripts/verify.sh safe` | Thành công | Maven `BUILD SUCCESS` |
-| MySQL migration/integration | `bash scripts/verify.sh integration` | Thành công | 2026-10-10: 42 test; MySQL 8.4.11 tạm; Flyway V1/V2/V3 |
+| MySQL migration/integration | `bash scripts/verify.sh integration` | Thành công | 2026-10-10: 46 test; MySQL 8.4.11 tạm; Flyway V1/V2/V3 |
 | Backend test mục tiêu | Chạy bởi `bash scripts/verify.sh safe` | 20 thành công | 0 failure, 0 error, 0 skipped |
 | Frontend contract/security tests | `node --test` qua `scripts/verify.sh` | Thành công | 3 file static/contract; không thay thế browser test |
 | Frontend lint | Chạy bởi `bash scripts/verify.sh safe` | Thành công | Oxlint không báo lỗi |
@@ -28,10 +28,10 @@
 | Compose local smoke | Build/start + frontend/API/Mailpit | Thành công | 4 service healthy; SPA route/header và API smoke qua Nginx proxy đạt |
 | Browser E2E | `bash scripts/verify.sh frontend-e2e` | Thành công | Playwright Chromium, 1 test pass trong 1.1 phút; điều khiển DOM thật qua full Compose |
 | Browser manual PRD-110 | Người dùng chạy full Compose và kiểm tra qua trình duyệt/Mailpit | Thành công | 4 container healthy; email/link/reset/login đạt; token biến mất khỏi URL; link cũ bị từ chối |
-| GitHub Device CI | `safe`, `integration`, `compose-smoke` | Thành công | Push run và PR run của commit `5837be2` đều xanh |
+| GitHub Device CI | `safe`, `integration`, `compose-smoke` | Thành công | PR #5 có đủ sáu check push/PR xanh và đã merge vào `main` tại `681ab42` |
 | Data-scale benchmark | Dataset/máy/lệnh phải được ghi | Thành công | Baseline 1k/10k/100k, raw latency, heap/RSS và plan lưu tại `docs/benchmarks/device-scale-baseline-2026-10-09.md` |
 | Device query index benchmark | `bash scripts/benchmark-device-query-index.sh --confirm-isolated` | Thành công | 100k trước/sau, 2 chu kỳ x 3 lần đo; report tại `docs/benchmarks/device-query-index-comparison-2026-10-10.md` |
-| Concurrent requests | MySQL integration test thật | Chưa chạy | |
+| Concurrent requests | MySQL integration test thật | Thành công | 4/4 race test và full suite 46/46 đạt; mỗi scenario đúng một HTTP 200 và một HTTP 409 |
 | SMTP failure/recovery | Tắt/bật SMTP test | Chưa chạy | |
 | Backup/restore | Restore vào database cô lập và kiểm tra | Chưa chạy | |
 
@@ -137,15 +137,15 @@
 | ID | Tình huống | Kết quả mong đợi | Kết quả thực tế | Trạng thái |
 |---|---|---|---|---|
 | V-01 | Máy sạch khởi động stack | Frontend, backend, MySQL, Mailpit healthy bằng quy trình tài liệu hóa | Cả 4 service healthy trên máy local; chưa có clean-machine run | Một phần |
-| V-02 | Full test/migration | Chỉ dùng MySQL cô lập, không thể chạm Aiven ngoài ý muốn | 42 test đạt trên MySQL Testcontainers, Flyway V1/V2/V3; biến DB môi trường bị bỏ | Đạt |
+| V-02 | Full test/migration | Chỉ dùng MySQL cô lập, không thể chạm Aiven ngoài ý muốn | 46 test đạt trên MySQL Testcontainers, Flyway V1/V2/V3; biến DB môi trường bị bỏ | Đạt |
 | V-03 | Password reset E2E | Email/link/reset/login/token revocation đúng contract | Playwright Chromium đạt email/link/reset/login, URL/referrer và mật khẩu cũ/mới; JWT cũ có backend test nhưng chưa kiểm tra trên browser/Compose | Một phần |
 | V-04 | API list với dữ liệu lớn | Trả page có giới hạn/filter/sort đúng contract | MySQL 8.4.11 đạt 100k row; so sánh PRD-209: page đầu 447,520 -> 50,178 ms, deep page 608,277 -> 624,786 ms | Đạt |
 | V-05 | Request size quá giới hạn | Bị từ chối hoặc giới hạn theo contract | `size=101` trên users và devices trả HTTP 400/code 1055 trong integration test | Đạt |
 | V-06 | Export dữ liệu lớn | Không bắt buộc nạp toàn bảng vào heap; file đúng | 100k: CSV median 1.669,511 ms/peak heap delta 123,444 MiB; XLSX median 6.806,224 ms/117 MiB; output đã có unit/integration test đúng định dạng | Đạt |
 | V-07 | Import file lớn/lỗi dòng | Xử lý theo giới hạn và báo lỗi xác định | 100k CSV 7.100.032 byte import đủ trong 225,443 giây; peak heap delta 117,122 MiB; rollback/header/BOM/size đã có integration/unit test | Đạt |
 | V-08 | Query trước/sau index | Có query plan, dataset và số đo lặp lại được | 100k, hai chu kỳ x ba lần: page đầu cải thiện 88,79% và plan dùng `idx_devices_name`; keyword +9,45%, deep page -2,71%; report đầy đủ đã lưu | Đạt |
-| V-09 | Hai request assign cùng device | Chỉ một kết quả hợp lệ; không có hai assignment mở | Chưa chạy | Chưa chạy |
-| V-10 | Hai request return/review/repair | State transition không bị lặp hoặc mâu thuẫn | Chưa chạy | Chưa chạy |
+| V-09 | Hai request assign cùng device | Chỉ một kết quả hợp lệ; không có hai assignment mở | Một HTTP 200, một HTTP 409/code 1022; database có đúng một active assignment và device ở `ASSIGNED` | Đạt |
+| V-10 | Hai request return/review/repair | State transition không bị lặp hoặc mâu thuẫn | Mỗi race có một HTTP 200 và một HTTP 409; codes 1029/1035/1046; dữ liệu cuối nhất quán | Đạt |
 | V-11 | SMTP tắt khi tạo email | Nghiệp vụ/job theo contract; job không mất | Chưa chạy | Chưa chạy |
 | V-12 | SMTP bật lại | Job retry và email hoàn tất đúng một lần | Chưa chạy | Chưa chạy |
 | V-13 | Gọi reset/login quá mức | Rate limit hoạt động giống nhau, không lộ tài khoản | Chưa chạy | Chưa chạy |
@@ -229,6 +229,22 @@ Lỗi hoặc giới hạn còn lại:
 - `bash scripts/verify.sh integration`: exit 0; 42/42 test đạt trên MySQL 8.4.11; Flyway áp dụng V1/V2/V3 và test xác nhận `idx_devices_name` trong `information_schema`.
 - Không sửa `frontend/` hoặc `.env`. Rollback code trước merge là bỏ V3 cùng logic keyword; sau khi V3 đã áp dụng, rollback schema thủ công tương ứng là `DROP INDEX idx_devices_name ON devices`, chỉ thực hiện theo quy trình migration/rollback đã duyệt.
 
+## PRD-210/211 — Xác nhận người dùng và tích hợp Giai đoạn 2 ngày 2026-10-10
+
+- Người dùng chạy `DeviceScaleBenchmarkIT` trên commit `681ab42` với Testcontainers MySQL 8.4.11, dataset 1k/10k/100k và heap tối đa 512 MiB; terminal xác nhận `BUILD SUCCESS`, 1 test đạt, exit 0 trong 8 phút 39 giây.
+- Report local: `target/benchmarks/prd-210-user-confirmation.md`. Ở 100k: import 322.918,738 ms; median page đầu 439,314 ms, deep page 888,687 ms, keyword 426,418 ms, CSV 2.072,262 ms và XLSX 8.453,611 ms; không OOM.
+- PR #5 merge branch `feature/device-query-index` vào `main` tại `681ab42dcbd39e7e8153e26b78ef2e9a4caad49e`; ba check `safe`, `integration`, `compose-smoke` đều xanh trên cả push và pull request (sáu check).
+
+## PRD-301 đến PRD-304/307 — Tính đúng đắn khi request đồng thời ngày 2026-10-10
+
+- Test-first focused run ban đầu chứng minh contract chưa thống nhất: assign thua bằng optimistic conflict code 1053, còn return và repair thua bằng HTTP 400. Sau review, contract được chốt ở HTTP 409 với mã nghiệp vụ riêng cho bốn transition.
+- Thay đổi production tối thiểu: `assignDevice` lấy device bằng pessimistic write lock `findByIdForUpdate`; return, extension review và repair transition tiếp tục dùng các lock hiện hữu. Không thêm migration hoặc constraint vì không có invariant database nào bị phá vỡ trong race test.
+- `ConcurrencyCorrectnessIntegrationTest` gửi hai HTTP request thật đồng thời qua `MockMvc`, dùng MySQL 8.4.11 Testcontainers riêng. Bốn scenario assign, return, approve/reject extension và complete/unrepairable repair đều có đúng một HTTP 200 và một HTTP 409; database được đọc lại để kiểm tra state/deadline/active assignment.
+- Focused suite cuối: 4/4 test đạt, 0 failure/error/skip. Full `bash scripts/verify.sh integration`: exit 0; 46/46 test đạt, 0 failure/error/skip; Flyway V1/V2/V3 áp dụng trên database cô lập; tổng thời gian 2 phút 27 giây.
+- Cổng cuối `bash scripts/verify.sh safe`: exit 0; kiểm tra tài liệu/diff, backend compile, 20 backend test, generator/benchmark isolation guards, 3 frontend test, lint và build 92 module đều đạt.
+- Error contract: assign code 1022, return 1029, extension 1035, repair 1046 đều HTTP 409; optimistic conflict ngoài bốn trạng thái trên tiếp tục code 1053/HTTP 409. Response không lộ exception/database internals.
+- Không sửa `frontend/`. PRD-305 vẫn mở và chưa được gửi cho Antigravity theo yêu cầu người dùng; PRD-306 vẫn cần người dùng chạy demo thủ công.
+
 ## Lần chạy baseline 2026-10-08
 
 - Phạm vi: kiểm tra tài liệu/diff, backend compile, nhóm test password reset/JWT/security và frontend lint/build.
@@ -240,5 +256,5 @@ Lỗi hoặc giới hạn còn lại:
 
 ## Kết luận
 
-- Gate G1 và kiểm tra thủ công PRD-110 đã đạt, nhưng hệ thống chưa được tuyên bố production-ready vì các giai đoạn và follow-up bảo mật sau G1 còn mở.
-- Phần kỹ thuật PRD-201 đến PRD-209 và local integration PRD-211 đã có bằng chứng, commit local `37333db`. Bước tiếp theo của Giai đoạn 2 là PRD-210 do người dùng xác nhận, rồi push/CI/PR branch PRD-209 sau khi khôi phục GitHub auth trước khi bắt đầu Giai đoạn 3.
+- Gate G1 và G2 đã đạt. Backend của Giai đoạn 3 (PRD-301 đến PRD-304) cùng integration PRD-307 đã có bằng chứng, nhưng hệ thống chưa được tuyên bố production-ready vì PRD-305/306 và các giai đoạn 4-7 còn mở.
+- Nhánh hiện tại chỉ thay đổi backend/test/tài liệu chung. Frontend PRD-305 chưa bắt đầu theo yêu cầu người dùng.

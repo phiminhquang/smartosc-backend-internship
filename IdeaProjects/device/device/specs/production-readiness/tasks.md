@@ -3,8 +3,8 @@
 ## Trạng thái tổng thể
 
 - Spec: Approved ngày 2026-10-08.
-- Implementation: Giai đoạn 0/1 và phần kỹ thuật PRD-201 đến PRD-209 đã hoàn tất; PRD-210 chờ người dùng xác nhận trên máy đã ghi.
-- Verification: Cổng `safe`, MySQL integration Flyway V1-V3, benchmark 100k, frontend static tests/build, local Compose bốn service, Playwright Chromium E2E và ba job GitHub CI trước PRD-209 đều đạt.
+- Implementation: Giai đoạn 0/1/2 đã hoàn tất; backend Giai đoạn 3 từ PRD-301 đến PRD-304 và phần integration PRD-307 đã hoàn tất. Frontend PRD-305 chưa bắt đầu theo yêu cầu người dùng.
+- Verification: Cổng `safe`, MySQL integration Flyway V1-V3, benchmark 100k do người dùng xác nhận, bốn race scenario backend, frontend static tests/build, local Compose bốn service, Playwright Chromium E2E và GitHub CI đến PR #5 đều đạt.
 - Feature password reset vẫn là công việc đang Verifying và là dependency của Giai đoạn 1/4.
 
 ## Ký hiệu owner và cách làm
@@ -70,8 +70,8 @@
 - [x] PRD-207 `[Owner: Codex] [AI thực hiện]` Generator CSV tổng hợp chỉ ghi filesystem, giới hạn row và từ chối ghi đè mặc định; không đọc `.env`, không có kết nối database/mạng.
 - [x] PRD-208 `[Owner: Codex] [AI thực hiện]` Đã thu baseline import/query/export, peak heap/RSS và `EXPLAIN ANALYZE` trên 1k/10k/100k với máy/JVM/MySQL được ghi; report lưu tại `docs/benchmarks/device-scale-baseline-2026-10-09.md`.
 - [x] PRD-209 `[Owner: Codex] [AI thực hiện]` Đã đo trước/sau 100k và thêm Flyway V3 `devices(name)`. Median trang đầu giảm 447,520 xuống 50,178 ms; keyword control không regression; deep offset không được tuyên bố đã giải quyết.
-- [ ] PRD-210 `[Owner: User] [AI hướng dẫn]` Chạy kịch bản dữ liệu lớn, lưu kết quả/ảnh và xác nhận giới hạn máy.
-- [x] PRD-211 `[Owner: Integration]` Local `safe` đạt, integration 42/42 đạt trên MySQL 8.4.11/Flyway V1-V3 và báo cáo trước/sau đã lưu; GitHub CI/PR của branch vẫn cần chạy sau commit.
+- [x] PRD-210 `[Owner: User] [AI hướng dẫn]` Người dùng chạy lại benchmark 1k/10k/100k trên máy đã ghi và xác nhận `BUILD SUCCESS`, exit 0 trong 8 phút 39 giây; report local ở `target/benchmarks/prd-210-user-confirmation.md`, không OOM với heap 512 MiB.
+- [x] PRD-211 `[Owner: Integration]` Local `safe` và integration 42/42 đạt trên MySQL 8.4.11/Flyway V1-V3; PR #5 đã có đủ sáu check push/PR xanh và merge vào `main` tại `681ab42`.
 
 ### Gate G2
 
@@ -82,18 +82,18 @@
 
 ## Giai đoạn 3 — Request đồng thời và tính đúng đắn dữ liệu
 
-- [ ] PRD-301 `[Owner: Codex] [AI thực hiện]` Viết MySQL concurrent integration test cho hai request cùng assign một device.
-- [ ] PRD-302 `[Owner: Codex] [AI thực hiện]` Viết test đồng thời cho return, extension approve/reject và repair transition quan trọng.
-- [ ] PRD-303 `[Owner: Codex] [AI thực hiện]` Sửa transaction/locking/constraint tối thiểu theo failure thực tế, không đổi kiến trúc khi chưa cần.
-- [ ] PRD-304 `[Owner: Codex] [AI thực hiện]` Chốt error contract xung đột và test HTTP, dự kiến 409 sau khi review.
+- [x] PRD-301 `[Owner: Codex] [AI thực hiện]` MySQL concurrent integration test gửi hai HTTP request cùng assign một device; đúng một request thành công, chỉ một active assignment được commit.
+- [x] PRD-302 `[Owner: Codex] [AI thực hiện]` Test đồng thời cho return, extension approve/reject và repair complete/unrepairable đều đạt trên MySQL thật.
+- [x] PRD-303 `[Owner: Codex] [AI thực hiện]` Luồng assign dùng pessimistic write lock đã có ở repository; các luồng còn lại giữ lock hiện hữu. Không thêm constraint/migration vì test dữ liệu không phát hiện invariant bị phá vỡ.
+- [x] PRD-304 `[Owner: Codex] [AI thực hiện]` Conflict contract chốt HTTP `409`: codes `1022`, `1029`, `1035`, `1046`; optimistic conflict chung tiếp tục code `1053`. Integration test kiểm tra HTTP và code.
 - [ ] PRD-305 `[Owner: Antigravity] [AI thực hiện]` Chặn submit lặp, hiển thị conflict và refresh dữ liệu. Phụ thuộc: PRD-304.
 - [ ] PRD-306 `[Owner: User] [AI hướng dẫn]` Chạy demo hai request đồng thời và kiểm tra trạng thái database.
-- [ ] PRD-307 `[Owner: Integration]` Ghi bằng chứng lặp lại và review dữ liệu sau race test.
+- [x] PRD-307 `[Owner: Integration]` Focused concurrency suite và full integration đều đạt; assertions đọc lại database xác nhận assignment/state/deadline/final repair state nhất quán.
 
 ### Gate G3
 
-- [ ] G3-1 Chỉ kết quả hợp lệ được commit trong mọi scenario đã duyệt.
-- [ ] G3-2 Không có active assignment/transition mâu thuẫn do race.
+- [x] G3-1 Chỉ kết quả hợp lệ được commit trong bốn scenario backend đã duyệt.
+- [x] G3-2 Không có active assignment/transition mâu thuẫn do race trong MySQL integration test.
 - [ ] G3-3 Frontend không báo thành công giả hoặc gửi lặp không cần thiết.
 
 ## Giai đoạn 4 — Email nền và rate limit
@@ -165,7 +165,8 @@
 - PRD-003, PRD-103, PRD-107 và phần tích hợp CI PRD-109 đã được kiểm tra; Playwright Chromium E2E local đã đạt.
 - Docker Engine/Compose và quyền user đã hoạt động; blocker Docker được gỡ. Full stack đạt bốn service healthy trong lần kiểm tra PRD-110.
 - Password reset đã có MySQL Testcontainers, full Compose, Playwright E2E, kiểm tra trình duyệt thủ công và GitHub CI xanh; JWT cũ trên Compose và PR-207/208/209 vẫn còn mở.
-- PRD-210 cần người dùng chạy/lưu ảnh trên máy đã ghi; local technical gate G2 đã có bằng chứng và commit `37333db`, nhưng branch PRD-209 chưa push/CI/PR do GitHub CLI mất xác thực.
+- Giai đoạn 2 đã đóng: PRD-210 được người dùng xác nhận; PR #5 đã merge vào `main` tại `681ab42` với sáu check xanh.
+- Giai đoạn 3 còn PRD-305 phía frontend và PRD-306 do người dùng chạy demo. Theo yêu cầu hiện tại, chưa gửi task cho Antigravity và không sửa `frontend/`.
 - Chưa chọn provider demo; blocker này chỉ áp dụng Giai đoạn 6, không chặn local/test.
 
 ## Quy tắc cập nhật
