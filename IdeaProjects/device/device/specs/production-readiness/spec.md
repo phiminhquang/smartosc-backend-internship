@@ -152,7 +152,7 @@ Trạng thái: **Approved — người dùng duyệt PRD-202 ngày 2026-10-09 sa
 | `GET /api/extension-requests/me` | `status` tùy chọn; user lấy từ JWT | `requestedAt`, `requestedReturnAt`, `reviewedAt`, `status` | `requestedAt,desc` + `id,desc` |
 | `GET /api/extension-requests/pending` | Luôn `status=PENDING` | `requestedAt`, `requestedReturnAt` | `requestedAt,asc` + `id,asc` |
 
-`GET /api/devices` giữ filter/response hiện tại nhưng phải dùng validation chung cho `page/size` và giới hạn `size=100`; frontend hiện truyền `size=10` nên không đổi hành vi màn hình hiện tại.
+`GET /api/devices` giữ filter/response hiện tại nhưng phải dùng validation chung cho `page/size` và giới hạn `size=100`; frontend hiện truyền `size=10` nên không đổi hành vi màn hình hiện tại. Trang không có keyword sắp xếp `name,asc` + `id,asc`; trang có keyword giữ thứ tự tên không phân biệt hoa/thường bằng `LOWER(name),asc` + `id,asc` để không ép leading-wildcard scan đi theo B-tree `name`.
 
 ### Tương thích và phạm vi frontend
 
@@ -165,6 +165,7 @@ Trạng thái: **Approved — người dùng duyệt PRD-202 ngày 2026-10-09 sa
 - Mọi query phải chọn thứ tự xác định với `id` làm tie-breaker; không dựa vào thứ tự tự nhiên của database.
 - Dùng `EXPLAIN ANALYZE`, dataset và phép đo lặp lại trước khi thêm index. Không thêm index chỉ vì một cột xuất hiện trong filter hoặc có selectivity thấp.
 - Offset pagination là contract đã duyệt. Deep page có thể chậm; nếu benchmark chứng minh bottleneck, cân nhắc truy vấn hai bước lấy page ID trên covering index rồi join/fetch DTO chi tiết. Không áp dụng mẹo này trước PRD-207/208/209.
+- Kết quả PRD-209 trên 100k chỉ chứng minh lợi ích rõ cho trang đầu, nên migration tối thiểu là `devices(name)`. Deep offset vẫn scan/sort và chưa đủ bằng chứng để thêm deferred join; keyword leading-wildcard vẫn là table scan đã biết.
 - Với quan hệ `User.roles` dạng to-many, không page trực tiếp trên collection fetch join; dùng page ID/two-step fetch hoặc chiến lược tương đương đã có integration test để tránh in-memory pagination và sai `totalElements`.
 - Video tham khảo do người dùng cung cấp: [Tối ưu phân trang MySQL trên bảng lớn](https://www.youtube.com/watch?v=tjT4O5HGIEU&t=870s). Con số trong video là ví dụ bên ngoài, không phải benchmark của Device.
 

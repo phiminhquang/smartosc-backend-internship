@@ -8,11 +8,12 @@
 ## Trạng thái hiện tại
 
 - Backend, migration, email template và frontend đã được triển khai.
-- `bash scripts/verify.sh safe` và `bash scripts/verify.sh integration` được chạy lại ngày 2026-10-08 lúc 13:55-13:58 +07: safe đạt toàn bộ, integration đạt 31/31 test trên MySQL Testcontainers.
-- MySQL integration, Flyway V1/V2, full Compose frontend/backend/MySQL/Mailpit và Playwright Chromium browser E2E đã đạt local.
+- PRD-209 đang ở branch `feature/device-query-index` từ `main` `3179a16`; working tree chưa commit chứa migration/index, query guard, benchmark, test và tài liệu liên quan.
+- `bash scripts/verify.sh safe` ngày 2026-10-10 đạt compile, 20 backend test, benchmark/generator guards, 3 frontend test, lint/build. `bash scripts/verify.sh integration` đạt 42/42 test trên MySQL 8.4.11, Flyway V1/V2/V3.
+- MySQL integration, full Compose frontend/backend/MySQL/Mailpit và Playwright Chromium browser E2E đã đạt local; CI xanh gần nhất là PRD-208 trước thay đổi branch hiện tại.
 - PR #3 đã merge PRD-206/207 vào `main` tại `9b9e4fd`; post-merge Device CI run `37910483706` đạt `safe` 35 giây, `integration` 1 phút 18 giây và `compose-smoke` 2 phút 34 giây.
-- Branch hiện tại là `feature/device-scale-benchmark`, tách từ `main` sau PR #3. PRD-208 đã có full baseline 1k/10k/100k và đang chờ chạy gate/review/commit; xem mục cuối file trước khi sửa.
-- Chưa sẵn sàng public production vì PRD-209 và các giai đoạn production-readiness sau đó còn mở.
+- PRD-208 đã merge qua PR #4. PRD-209 có so sánh 100k trước/sau và local gate đạt; còn review/commit/push/CI/PR và xác nhận người dùng PRD-210.
+- Chưa sẵn sàng public production vì Giai đoạn 3-7 và các follow-up bảo mật còn mở.
 - Phân công mặc định và ranh giới chỉnh sửa tuân theo `AGENTS.md`; hiện không có ngoại lệ đang hoạt động.
 
 ## Nguồn sự thật cần đọc
@@ -42,11 +43,11 @@
 
 ## Việc tiếp theo
 
-1. Chạy `bash scripts/verify.sh safe` và `bash scripts/verify.sh integration`, review diff PRD-208 rồi commit/push/CI/PR riêng.
-2. Sau khi PRD-208 merge, thực hiện PRD-209 trên nhánh mới bằng cách review plan đã lưu và đo trước/sau cùng dataset/môi trường.
-3. Không thêm index hoặc deferred join nếu phép đo sau thay đổi không chứng minh lợi ích đủ rõ.
-4. Trước public production, hoàn tất PR-207/208/209 trong password-reset `tasks.md`.
-5. Không tuyên bố production-ready chỉ từ Gate G1/G2; các giai đoạn và follow-up bảo mật còn lại vẫn áp dụng.
+1. Review diff PRD-209, commit/push branch, chờ GitHub `safe`/`integration`/`compose-smoke`, mở và merge PR riêng rồi ghi bằng chứng CI.
+2. Hướng dẫn người dùng thực hiện PRD-210 và chỉ đánh dấu hoàn thành sau khi họ xác nhận kết quả/ảnh trên máy đã ghi.
+3. Không thêm deferred join/full-text từ số đo hiện tại: deep offset chưa cải thiện và keyword leading-wildcard vẫn là table scan đã biết.
+4. Sau Giai đoạn 2, bắt đầu PRD-301/302 bằng concurrent integration test trước khi sửa locking/constraint.
+5. Trước public production, hoàn tất PR-207/208/209 trong password-reset `tasks.md`; không tuyên bố production-ready chỉ từ Gate G1/G2.
 
 ## Cảnh báo vận hành
 
@@ -211,3 +212,14 @@
 - Gate local sau full baseline đều đạt: `bash scripts/verify.sh safe` có 20 backend test, generator/benchmark guard, frontend test/lint/build; `bash scripts/verify.sh integration` đạt 41/41 test trên MySQL 8.4.11 Testcontainers và Flyway V1/V2.
 - Commit implementation/report `cd1ccbb`; GitHub push run `37940116019` đạt `safe` 39 giây, `integration` 1 phút 12 giây và `compose-smoke` 5 phút 39 giây.
 - Việc còn lại trên branch này: commit bằng chứng CI, push, mở/merge PR PRD-208 sau PR CI. Sau khi merge mới tạo nhánh PRD-209.
+
+## PRD-209 index truy vấn thiết bị ngày 2026-10-10
+
+- Branch `feature/device-query-index` từ merge commit PR #4 `3179a16`; working tree hiện chưa commit.
+- Benchmark 100k trước/sau dùng hai chu kỳ, mỗi operation warm-up 2 và ghi 3 lần. Report lưu tại `docs/benchmarks/device-query-index-comparison-2026-10-10.md`.
+- Median trang đầu 447,520 -> 50,178 ms, cải thiện 88,79%; `EXPLAIN ANALYZE` đổi từ table scan + sort sang index scan `idx_devices_name`. Deep page giảm 2,71%; keyword cải thiện 9,45%, nên không claim hai operation này được tối ưu.
+- Thêm Flyway `V3__device_name_index.sql` với `devices(name)`. Keyword dùng `ORDER BY LOWER(name), id` để tránh regression observed khi optimizer chọn ordered index scan cho leading-wildcard; mixed-case integration test đạt.
+- Harness có guard `--confirm-isolated`, bỏ datasource env, xác nhận `jdbc:tc:mysql`/`device_test`, seed multi-row 1.000 row/lô và chỉ drop/recreate index trong database Testcontainers dùng một lần.
+- `bash scripts/verify.sh safe` exit 0: 20 backend test, hai benchmark/generator guards, 3 frontend test, lint và build 92 module đạt.
+- `bash scripts/verify.sh integration` exit 0: 42/42 test đạt trên MySQL 8.4.11; Flyway V1/V2/V3 và `idx_devices_name` được xác nhận.
+- Còn lại: review diff, commit/push/CI/PR; PRD-210 chỉ người dùng được đánh dấu sau xác nhận.

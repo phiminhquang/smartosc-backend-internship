@@ -83,5 +83,29 @@ bash scripts/benchmark-device-scale.sh \
 
 Baseline đã ghi ngày 2026-10-09 nằm tại
 [`docs/benchmarks/device-scale-baseline-2026-10-09.md`](../benchmarks/device-scale-baseline-2026-10-09.md).
-Không dùng số liệu này như cam kết production; PRD-209 phải so sánh trên cùng
-môi trường và dataset trước khi quyết định index.
+Không dùng số liệu này như cam kết production.
+
+## So sánh index truy vấn thiết bị
+
+Harness PRD-209 đo cùng dataset trước/sau candidate `devices(name)` trên một
+MySQL Testcontainers dùng một lần:
+
+```bash
+bash scripts/benchmark-device-query-index.sh --confirm-isolated
+```
+
+- Mặc định sinh 100.000 row, warm-up hai lần, ghi ba lần và lặp hai chu kỳ
+  baseline/indexed.
+- Script bỏ các biến datasource ngoài; test xác nhận JDBC `jdbc:tc:mysql` và
+  database `device_test` trước khi xóa/nạp dữ liệu.
+- Harness chỉ drop/recreate candidate index trong database dùng một lần. Không
+  chạy test này trên database local bền vững, demo hoặc production.
+- Report gồm raw latency, thời gian tạo index và `EXPLAIN ANALYZE` cho trang
+  đầu, deep page, count và keyword control.
+- `--rows`, `--warmups`, `--repetitions`, `--cycles`, `--output` cho phép chạy
+  smoke nhỏ; script từ chối chạy nếu thiếu `--confirm-isolated`.
+
+So sánh 100.000 row ngày 2026-10-10 nằm tại
+[`docs/benchmarks/device-query-index-comparison-2026-10-10.md`](../benchmarks/device-query-index-comparison-2026-10-10.md).
+Số đo cho thấy index có lợi rõ ở trang đầu nhưng không giải quyết deep offset
+hoặc tìm kiếm leading-wildcard; không suy rộng kết quả local thành SLA.

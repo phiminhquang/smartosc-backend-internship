@@ -3,8 +3,8 @@
 ## Trạng thái tổng thể
 
 - Spec: Approved ngày 2026-10-08.
-- Implementation: Giai đoạn 0/1 đang thực hiện; các giai đoạn sau chưa bắt đầu.
-- Verification: Cổng `safe`, MySQL integration, frontend static tests, local Compose bốn service, Playwright Chromium E2E và ba job GitHub CI đều đạt.
+- Implementation: Giai đoạn 0/1 và phần kỹ thuật PRD-201 đến PRD-209 đã hoàn tất; PRD-210 chờ người dùng xác nhận trên máy đã ghi.
+- Verification: Cổng `safe`, MySQL integration Flyway V1-V3, benchmark 100k, frontend static tests/build, local Compose bốn service, Playwright Chromium E2E và ba job GitHub CI trước PRD-209 đều đạt.
 - Feature password reset vẫn là công việc đang Verifying và là dependency của Giai đoạn 1/4.
 
 ## Ký hiệu owner và cách làm
@@ -69,15 +69,15 @@
 - [x] PRD-206 `[Owner: Codex] [AI thực hiện]` Export CSV/XLSX stream trực tiếp, đọc MySQL theo keyset batch; import CSV có giới hạn 10 MiB và flush/clear theo batch. Unit test và MySQL integration test đạt.
 - [x] PRD-207 `[Owner: Codex] [AI thực hiện]` Generator CSV tổng hợp chỉ ghi filesystem, giới hạn row và từ chối ghi đè mặc định; không đọc `.env`, không có kết nối database/mạng.
 - [x] PRD-208 `[Owner: Codex] [AI thực hiện]` Đã thu baseline import/query/export, peak heap/RSS và `EXPLAIN ANALYZE` trên 1k/10k/100k với máy/JVM/MySQL được ghi; report lưu tại `docs/benchmarks/device-scale-baseline-2026-10-09.md`.
-- [ ] PRD-209 `[Owner: Codex] [AI thực hiện]` Review query plan và thêm migration index tối thiểu có so sánh trước/sau.
+- [x] PRD-209 `[Owner: Codex] [AI thực hiện]` Đã đo trước/sau 100k và thêm Flyway V3 `devices(name)`. Median trang đầu giảm 447,520 xuống 50,178 ms; keyword control không regression; deep offset không được tuyên bố đã giải quyết.
 - [ ] PRD-210 `[Owner: User] [AI hướng dẫn]` Chạy kịch bản dữ liệu lớn, lưu kết quả/ảnh và xác nhận giới hạn máy.
-- [ ] PRD-211 `[Owner: Integration]` Chạy backend/frontend checks và ghi báo cáo hiệu năng trung thực.
+- [x] PRD-211 `[Owner: Integration]` Local `safe` đạt, integration 42/42 đạt trên MySQL 8.4.11/Flyway V1-V3 và báo cáo trước/sau đã lưu; GitHub CI/PR của branch vẫn cần chạy sau commit.
 
 ### Gate G2
 
 - [x] G2-1 Collection lớn trong phạm vi PRD-201 đã phân trang; devices giữ contract hiện tại nhưng có validation chung.
 - [x] G2-2 Import/export không bắt buộc nạp toàn bộ dữ liệu lớn vào bộ nhớ; implementation và test xác nhận DB/persistence context/row window đều được giới hạn theo batch.
-- [ ] G2-3 Index có bằng chứng query plan và đo trước/sau.
+- [x] G2-3 Index có bằng chứng query plan và đo trước/sau; trang đầu dùng `idx_devices_name`, còn deep offset và keyword vẫn table scan theo giới hạn đã ghi.
 - [x] G2-4 Frontend không tiêu thụ tám endpoint breaking và tiếp tục dùng contract devices không đổi.
 
 ## Giai đoạn 3 — Request đồng thời và tính đúng đắn dữ liệu
@@ -165,6 +165,7 @@
 - PRD-003, PRD-103, PRD-107 và phần tích hợp CI PRD-109 đã được kiểm tra; Playwright Chromium E2E local đã đạt.
 - Docker Engine/Compose và quyền user đã hoạt động; blocker Docker được gỡ. Full stack đạt bốn service healthy trong lần kiểm tra PRD-110.
 - Password reset đã có MySQL Testcontainers, full Compose, Playwright E2E, kiểm tra trình duyệt thủ công và GitHub CI xanh; JWT cũ trên Compose và PR-207/208/209 vẫn còn mở.
+- PRD-210 cần người dùng chạy/lưu ảnh trên máy đã ghi; local technical gate G2 đã có bằng chứng nhưng branch PRD-209 chưa commit/push/CI/PR.
 - Chưa chọn provider demo; blocker này chỉ áp dụng Giai đoạn 6, không chặn local/test.
 
 ## Quy tắc cập nhật

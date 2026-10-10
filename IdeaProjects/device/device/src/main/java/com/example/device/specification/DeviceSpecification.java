@@ -33,4 +33,17 @@ public class DeviceSpecification {
         return (root, query, cb) ->
                 category == null ? cb.conjunction() : cb.equal(root.get("category"), category);
     }
+
+    public static Specification<Device> orderByCaseFoldedName() {
+        return (root, query, cb) -> {
+            Class<?> resultType = query.getResultType();
+            if (!Long.class.equals(resultType) && !long.class.equals(resultType)) {
+                query.orderBy(
+                        cb.asc(cb.lower(root.get("name"))),
+                        cb.asc(root.get("id"))
+                );
+            }
+            return cb.conjunction();
+        };
+    }
 }
