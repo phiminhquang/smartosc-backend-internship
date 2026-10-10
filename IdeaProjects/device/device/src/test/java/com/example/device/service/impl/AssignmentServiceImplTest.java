@@ -80,7 +80,7 @@ class AssignmentServiceImplTest {
                 .build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(deviceRepository.findById(deviceId)).thenReturn(Optional.of(device));
+        when(deviceRepository.findByIdForUpdate(deviceId)).thenReturn(Optional.of(device));
         when(deviceAssignmentRepository.existsByDeviceIdAndStatusIn(
                 deviceId,
                 List.of(DeviceAssignmentStatus.ACTIVE, DeviceAssignmentStatus.OVERDUE)

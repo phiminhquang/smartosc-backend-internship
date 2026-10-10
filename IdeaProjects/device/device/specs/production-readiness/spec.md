@@ -209,6 +209,15 @@ Trạng thái: **Approved by implementation scope — giữ nguyên endpoint, qu
 - Given hai request cùng thao tác lên một thiết bị, assignment, extension hoặc repair,
 - When chúng chạy đồng thời,
 - Then chỉ kết quả hợp lệ được commit và dữ liệu không có trạng thái mâu thuẫn.
+- Request thắng trả HTTP `200` theo response hiện tại. Request thua vì trạng thái đã
+  được request kia chuyển trước trả HTTP `409` và giữ mã nghiệp vụ cụ thể:
+  - assign cùng thiết bị: code `1022` (`DEVICE_NOT_AVAILABLE`);
+  - return cùng assignment: code `1029` (`DEVICE_ALREADY_RETURNED`);
+  - approve/reject cùng extension: code `1035` (`EXTENSION_REQUEST_ALREADY_REVIEWED`);
+  - complete/unrepairable cùng repair: code `1046` (`REPAIR_CANNOT_FINISH`).
+- Optimistic-lock conflict ngoài bốn trạng thái trên tiếp tục trả HTTP `409`, code
+  `1053` (`DEVICE_CONCURRENTLY_MODIFIED`). Response không lộ exception hoặc chi tiết
+  database.
 
 ### FR-5: Email nền đáng tin cậy
 

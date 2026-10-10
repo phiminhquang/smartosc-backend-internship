@@ -2,17 +2,19 @@
 
 ## Mục tiêu hiện tại
 
-- Thực hiện Giai đoạn 2 production-readiness: phân trang, dữ liệu lớn, import/export và index có bằng chứng.
-- Chốt contract trước khi thay đổi backend và không sửa frontend thuộc owner Antigravity.
+- Hoàn tất phần backend Giai đoạn 3 production-readiness: request đồng thời và tính đúng đắn dữ liệu.
+- Không sửa hoặc giao việc frontend PRD-305 cho Antigravity cho tới khi người dùng yêu cầu.
 
 ## Trạng thái hiện tại
 
-- Backend, migration, email template và frontend đã được triển khai.
-- PRD-209 đang ở branch `feature/device-query-index` từ `main` `3179a16`; implementation/report đã commit local tại `37333db` và working tree sạch trước cập nhật handoff này.
-- `bash scripts/verify.sh safe` ngày 2026-10-10 đạt compile, 20 backend test, benchmark/generator guards, 3 frontend test, lint/build. `bash scripts/verify.sh integration` đạt 42/42 test trên MySQL 8.4.11, Flyway V1/V2/V3.
-- MySQL integration, full Compose frontend/backend/MySQL/Mailpit và Playwright Chromium browser E2E đã đạt local; CI xanh gần nhất là PRD-208 trước thay đổi branch hiện tại.
+- Backend, migration, email template và frontend hiện có đã được triển khai; nhánh hiện tại không sửa `frontend/`.
+- PRD-209 đã merge qua PR #5 vào `main` tại `681ab42`; sáu check push/PR đều xanh. Người dùng đã xác nhận PRD-210 bằng benchmark 1k/10k/100k thành công trong 8 phút 39 giây, không OOM.
+- Branch hiện tại: `feature/concurrency-correctness` từ `main` `681ab42`. PRD-301 đến PRD-304 và PRD-307 đã được triển khai trong working tree; chưa push hoặc mở PR.
+- `ConcurrencyCorrectnessIntegrationTest` bao phủ assign, return, extension approve/reject và repair complete/unrepairable. Mỗi race có đúng một HTTP 200 và một HTTP 409, sau đó đọc lại database xác nhận trạng thái nhất quán.
+- `bash scripts/verify.sh integration` ngày 2026-10-10 đạt 46/46 test trên MySQL 8.4.11, Flyway V1/V2/V3; tổng thời gian 2 phút 27 giây. Cổng `bash scripts/verify.sh safe` cuối cùng cũng đạt: 20 backend test, generator/benchmark guards, 3 frontend test, lint/build 92 module.
+- MySQL integration, full Compose frontend/backend/MySQL/Mailpit và Playwright Chromium browser E2E đã đạt local; CI gần nhất đã xanh qua PR #5 trước thay đổi concurrency hiện tại.
 - PR #3 đã merge PRD-206/207 vào `main` tại `9b9e4fd`; post-merge Device CI run `37910483706` đạt `safe` 35 giây, `integration` 1 phút 18 giây và `compose-smoke` 2 phút 34 giây.
-- PRD-208 đã merge qua PR #4. PRD-209 có so sánh 100k trước/sau và local gate đạt; còn push/CI/PR và xác nhận người dùng PRD-210.
+- Giai đoạn 2 đã hoàn tất. Giai đoạn 3 còn PRD-305 phía frontend và PRD-306 do người dùng demo; theo yêu cầu hiện tại chưa giao việc cho Antigravity.
 - Chưa sẵn sàng public production vì Giai đoạn 3-7 và các follow-up bảo mật còn mở.
 - Phân công mặc định và ranh giới chỉnh sửa tuân theo `AGENTS.md`; hiện không có ngoại lệ đang hoạt động.
 
@@ -25,13 +27,12 @@
 - Quyết định bảo mật lâu dài: `docs/decisions/001-password-reset-token-and-session-revocation.md`.
 - Quy tắc project và cổng kiểm tra: `AGENTS.md` và `scripts/verify.sh`.
 
-## Phạm vi file đã thay đổi
+## Phạm vi file đã thay đổi trên branch hiện tại
 
-- Backend: controller, security/JWT validator, authentication/password-reset service, user/reset-token model, repository, DTO và test liên quan trong `src/main/` và `src/test/`.
-- Database/email: `src/main/resources/db/migration/V2__password_reset.sql` và `src/main/resources/templates/email/password-reset.html`.
-- Frontend: các trang forgot/reset password, `authService`, route trong `App.tsx` và chính sách referrer trong `frontend/`.
-- Quy trình/tài liệu: `PROJECT.md`, các adapter AI, `specs/password-reset/`, ADR liên quan và `scripts/verify.sh`.
-- Dùng Git diff/history để lấy danh sách file chính xác; handoff chỉ giữ phạm vi để tránh lặp dữ liệu.
+- Backend: `ErrorCode`, `AssignmentServiceImpl` và unit test tương ứng.
+- Integration: `ConcurrencyCorrectnessIntegrationTest` mới cho bốn race scenario.
+- Tài liệu chung: `spec.md`, `tasks.md`, `verification.md` của production-readiness và file handoff này.
+- Không sửa `frontend/`, migration hoặc cấu hình database. Dùng Git diff để lấy danh sách file chính xác.
 
 ## Blocker và rủi ro còn lại
 
@@ -43,11 +44,11 @@
 
 ## Việc tiếp theo
 
-1. Push branch, chờ GitHub `safe`/`integration`/`compose-smoke`, mở và merge PR riêng rồi ghi bằng chứng CI; `gh auth status` hiện báo token của tài khoản `phiminhquang` không hợp lệ.
-2. Hướng dẫn người dùng thực hiện PRD-210 và chỉ đánh dấu hoàn thành sau khi họ xác nhận kết quả/ảnh trên máy đã ghi.
-3. Không thêm deferred join/full-text từ số đo hiện tại: deep offset chưa cải thiện và keyword leading-wildcard vẫn là table scan đã biết.
-4. Sau Giai đoạn 2, bắt đầu PRD-301/302 bằng concurrent integration test trước khi sửa locking/constraint.
-5. Trước public production, hoàn tất PR-207/208/209 trong password-reset `tasks.md`; không tuyên bố production-ready chỉ từ Gate G1/G2.
+1. Review/commit branch, push khi GitHub authentication hoạt động, chờ `safe`/`integration`/`compose-smoke`, mở và merge PR riêng rồi ghi bằng chứng CI.
+2. Chỉ giao PRD-305 cho Antigravity khi người dùng yêu cầu; không sửa `frontend/` từ branch backend này.
+3. Hướng dẫn người dùng chạy demo PRD-306 và chỉ đánh dấu hoàn thành sau khi có xác nhận thật.
+4. Sau khi chốt Giai đoạn 3, chuẩn bị ADR cho email job/outbox của PRD-401; chưa tạo migration trước khi người dùng duyệt PRD-402.
+5. Trước public production, hoàn tất PR-207/208/209 trong password-reset `tasks.md`; không tuyên bố production-ready chỉ từ Gate G1-G3.
 
 ## Cảnh báo vận hành
 

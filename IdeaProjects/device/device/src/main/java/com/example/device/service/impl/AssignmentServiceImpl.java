@@ -78,7 +78,7 @@ public class AssignmentServiceImpl implements AssignmentService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        Device device = deviceRepository.findById(request.getDeviceId())
+        Device device = deviceRepository.findByIdForUpdate(request.getDeviceId())
                 .orElseThrow(() -> new AppException(ErrorCode.DEVICE_NOT_FOUND));
 
         boolean hasOpenAssignment = deviceAssignmentRepository
