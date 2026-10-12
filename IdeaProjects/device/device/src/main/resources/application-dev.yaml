@@ -14,3 +14,5 @@ app:
     from: no-reply@device.local
   admin:
     email: ${ADMIN_EMAIL:admin@device.local}
+  email-job:
+    worker-enabled: true

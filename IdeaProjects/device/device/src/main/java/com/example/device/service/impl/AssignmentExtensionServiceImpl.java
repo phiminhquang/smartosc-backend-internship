@@ -5,6 +5,7 @@ import com.example.device.dto.request.ExtensionReviewRequest;
 import com.example.device.dto.response.ExtensionResponse;
 import com.example.device.dto.response.PageResult;
 import com.example.device.enums.DeviceAssignmentStatus;
+import com.example.device.enums.EmailJobType;
 import com.example.device.enums.ExtensionRequestStatus;
 import com.example.device.exception.AppException;
 import com.example.device.exception.ErrorCode;
@@ -16,7 +17,8 @@ import com.example.device.repository.AssignmentExtensionRepository;
 import com.example.device.repository.DeviceAssignmentRepository;
 import com.example.device.repository.UserRepository;
 import com.example.device.service.AssignmentExtensionService;
-import com.example.device.service.EmailService;
+import com.example.device.service.EmailJobEnqueueCommand;
+import com.example.device.service.EmailJobEnqueueService;
 import com.example.device.service.PaginationSupport;
 import com.example.device.specification.AssignmentExtensionSpecification;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +53,7 @@ public class AssignmentExtensionServiceImpl implements AssignmentExtensionServic
     private final AssignmentExtensionRepository extensionRepository;
     private final DeviceAssignmentRepository assignmentRepository;
     private final UserRepository userRepository;
-    private final EmailService emailService;
+    private final EmailJobEnqueueService emailJobEnqueueService;
     private final AssignmentExtensionMapper extensionMapper;
 
     @Override
@@ -212,12 +214,16 @@ public class AssignmentExtensionServiceImpl implements AssignmentExtensionServic
                 + "\nLý do: " + extension.getReason();
 
         for (User admin : userRepository.findDistinctByRoles_Name("ADMIN")) {
-            try {
-                emailService.sendEmail(admin.getEmail(), subject, content);
-            } catch (Exception e) {
-                System.out.println("Không gửi được mail cho admin "
-                        + admin.getEmail() + ": " + e.getMessage());
-            }
+            emailJobEnqueueService.enqueue(new EmailJobEnqueueCommand(
+                    EmailJobType.EXTENSION_REQUESTED,
+                    admin.getEmail(),
+                    subject,
+                    "email/plain-message",
+                    Map.of("content", content),
+                    "extension-requested:%s:%s".formatted(extension.getId(), admin.getId()),
+                    null,
+                    null
+            ));
         }
     }
 
@@ -236,11 +242,19 @@ public class AssignmentExtensionServiceImpl implements AssignmentExtensionServic
             content += "\nGhi chú: " + extension.getReviewNote();
         }
 
-        try {
-            emailService.sendEmail(extension.getRequestedBy(), subject, content);
-        } catch (Exception e) {
-            System.out.println("Không gửi được email kết quả: " + e.getMessage());
-        }
+        emailJobEnqueueService.enqueue(new EmailJobEnqueueCommand(
+                EmailJobType.EXTENSION_REVIEWED,
+                extension.getRequestedBy(),
+                subject,
+                "email/plain-message",
+                Map.of("content", content),
+                "extension-reviewed:%s:%s:%s".formatted(
+                        extension.getId(),
+                        extension.getStatus(),
+                        extension.getAssignment().getUser().getId()),
+                null,
+                null
+        ));
     }
 
     private User getCurrentUser() {

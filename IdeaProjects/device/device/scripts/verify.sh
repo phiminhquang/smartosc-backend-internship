@@ -56,16 +56,25 @@ run_backend_tests() {
 
 test_password_reset_backend() {
     local test_classes
-    test_classes="PasswordResetServiceImplTest,AuthenticationimplTest,JwtTokenVersionValidatorTest,AuthenticationControllerSecurityTest"
+    test_classes="PasswordResetServiceImplTest,PasswordResetTimingGuardTest,RateLimitServiceImplTest,AuthenticationimplTest,JwtTokenVersionValidatorTest,AuthenticationControllerSecurityTest"
 
     run_backend_tests "-Dtest=${test_classes}"
 }
 
 test_safe_backend() {
     local test_classes
-    test_classes="PasswordResetServiceImplTest,AuthenticationimplTest,JwtTokenVersionValidatorTest,AuthenticationControllerSecurityTest,DeviceFileServiceImplTest"
+    test_classes="PasswordResetServiceImplTest,PasswordResetTimingGuardTest,RateLimitServiceImplTest,AuthenticationimplTest,JwtTokenVersionValidatorTest,AuthenticationControllerSecurityTest,DeviceFileServiceImplTest,GlobalExceptionHandlerLoggingTest,EmailJobWorkerLoggingTest,EmailJobSenderImplTest,SmtpEmailTransportTest,ResendEmailTransportTest,JdkResendApiClientTest,RequestCorrelationFilterTest,OperationalMetricsTest"
 
     run_backend_tests "-Dtest=${test_classes}"
+}
+
+check_production_logging() {
+    if rg -n 'System\.(out|err)|printStackTrace\(' src/main/java; then
+        printf '%s\n' 'Production Java must use the application logger instead of direct console output.' >&2
+        return 1
+    fi
+
+    printf '%s\n' 'Production logging console-output guard passed.'
 }
 
 test_data_generator() {
@@ -98,6 +107,7 @@ test_data_generator() {
 test_benchmark_guard() {
     bash scripts/benchmark-device-scale.sh --help >/dev/null
     bash scripts/benchmark-device-query-index.sh --help >/dev/null
+    bash scripts/benchmark-password-reset-timing.sh --help >/dev/null
 
     if bash scripts/benchmark-device-scale.sh >/dev/null 2>&1; then
         printf '%s\n' 'Device scale benchmark ran without --confirm-isolated.' >&2
@@ -109,7 +119,49 @@ test_benchmark_guard() {
         return 1
     fi
 
+    if bash scripts/benchmark-password-reset-timing.sh >/dev/null 2>&1; then
+        printf '%s\n' 'Password-reset timing benchmark ran without --confirm-isolated.' >&2
+        return 1
+    fi
+
     printf '%s\n' 'Device benchmark isolation guard checks passed.'
+}
+
+test_demo_operations_guards() {
+    bash -n \
+        scripts/render-deploy-and-wait.sh \
+        scripts/post-deploy-check.sh \
+        scripts/demo-db-backup-restore.sh
+
+    bash scripts/render-deploy-and-wait.sh --help >/dev/null
+    bash scripts/post-deploy-check.sh --help >/dev/null
+    bash scripts/demo-db-backup-restore.sh --help >/dev/null
+
+    if bash scripts/render-deploy-and-wait.sh >/dev/null 2>&1; then
+        printf '%s\n' 'Render deploy helper ran without --confirm-deploy.' >&2
+        return 1
+    fi
+
+    if bash scripts/post-deploy-check.sh \
+        --backend-url http://backend.example \
+        --frontend-url http://frontend.example >/dev/null 2>&1; then
+        printf '%s\n' 'Post-deploy check accepted non-loopback HTTP origins.' >&2
+        return 1
+    fi
+
+    if bash scripts/demo-db-backup-restore.sh backup \
+        --database device_demo --output /tmp/device-demo-guard.sql >/dev/null 2>&1; then
+        printf '%s\n' 'Demo backup helper ran without its confirmation flag.' >&2
+        return 1
+    fi
+
+    if bash scripts/demo-db-backup-restore.sh restore --confirm-isolated-restore \
+        --database device_demo --input /tmp/device-demo-guard.sql >/dev/null 2>&1; then
+        printf '%s\n' 'Demo restore helper accepted the live demo database as a target.' >&2
+        return 1
+    fi
+
+    printf '%s\n' 'Demo deploy and backup/restore guard checks passed.'
 }
 
 check_frontend() {
@@ -177,9 +229,11 @@ case "${mode}" in
     safe)
         check_docs
         compile_backend
+        check_production_logging
         test_safe_backend
         test_data_generator
         test_benchmark_guard
+        test_demo_operations_guards
         check_frontend
         ;;
     docs)

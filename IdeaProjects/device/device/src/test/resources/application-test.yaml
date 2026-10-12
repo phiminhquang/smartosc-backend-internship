@@ -17,6 +17,8 @@ spring:
             enable: false
 
 app:
+  scheduler:
+    enabled: false
   mail:
     from: no-reply@device.test
   admin:
@@ -24,6 +26,11 @@ app:
     password: ${TEST_ADMIN_PASSWORD}
   password-reset:
     base-url: http://127.0.0.1/reset-password
+  email-job:
+    secret:
+      active-key-version: v1
+      keys:
+        v1: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 
 jwt:
   signer-key: ${TEST_JWT_SIGNER_KEY}

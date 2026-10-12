@@ -7,15 +7,13 @@ import com.example.device.model.PasswordResetToken;
 import com.example.device.model.User;
 import com.example.device.repository.PasswordResetTokenRepository;
 import com.example.device.repository.UserRepository;
-import com.example.device.service.EmailService;
 import com.example.device.service.PasswordResetService;
+import com.example.device.service.PasswordResetEmailJobService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -26,11 +24,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.HexFormat;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class PasswordResetServiceImpl implements PasswordResetService {
 
     private static final int TOKEN_BYTES = 32;
@@ -38,12 +34,9 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
+    private final PasswordResetEmailJobService passwordResetEmailJobService;
     private final Clock clock;
     private final SecureRandom secureRandom = new SecureRandom();
-
-    @Value("${app.password-reset.base-url}")
-    private String resetBaseUrl;
 
     @Value("${app.password-reset.expiration-minutes:15}")
     private long expirationMinutes;
@@ -54,7 +47,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     @Override
     @Transactional
     public void requestReset(String email) {
-        userRepository.findByEmailForUpdate(email).ifPresent(this::createAndSendToken);
+        userRepository.findByEmailForUpdate(email).ifPresent(this::createAndEnqueueToken);
     }
 
     @Override
@@ -77,7 +70,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         tokenRepository.markOtherUnusedTokensAsUsed(user.getId(), resetToken.getId(), now);
     }
 
-    private void createAndSendToken(User user) {
+    private void createAndEnqueueToken(User user) {
         Instant now = clock.instant();
         Instant cooldownThreshold = now.minus(cooldownSeconds, ChronoUnit.SECONDS);
 
@@ -96,27 +89,12 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 .build();
 
         PasswordResetToken savedToken = tokenRepository.save(resetToken);
-
-        try {
-            String resetLink = UriComponentsBuilder.fromUriString(resetBaseUrl)
-                    .queryParam("token", rawToken)
-                    .build(true)
-                    .toUriString();
-
-            emailService.sendHtmlEmail(
-                    user.getEmail(),
-                    "Đặt lại mật khẩu Device Management",
-                    "email/password-reset",
-                    Map.of(
-                            "name", user.getName(),
-                            "resetLink", resetLink,
-                            "expirationMinutes", expirationMinutes
-                    )
-            );
-        } catch (RuntimeException exception) {
-            savedToken.setUsedAt(now);
-            log.warn("Password reset email could not be sent");
-        }
+        passwordResetEmailJobService.enqueue(
+                user,
+                savedToken,
+                rawToken,
+                expirationMinutes
+        );
     }
 
     private String generateToken() {

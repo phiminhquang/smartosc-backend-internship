@@ -5,6 +5,7 @@ import com.example.device.dto.request.ReturnDeviceRequest;
 import com.example.device.enums.DeviceAssignmentStatus;
 import com.example.device.enums.DeviceReturnCondition;
 import com.example.device.enums.DeviceState;
+import com.example.device.enums.EmailJobType;
 import com.example.device.exception.AppException;
 import com.example.device.exception.ErrorCode;
 import com.example.device.mapper.DeviceAssignmentMapper;
@@ -14,15 +15,18 @@ import com.example.device.model.User;
 import com.example.device.repository.DeviceAssignmentRepository;
 import com.example.device.repository.DeviceRepository;
 import com.example.device.repository.UserRepository;
-import com.example.device.service.EmailService;
+import com.example.device.service.EmailJobEnqueueCommand;
+import com.example.device.service.EmailJobEnqueueService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,7 +52,7 @@ class AssignmentServiceImplTest {
     private DeviceAssignmentMapper deviceAssignmentMapper;
 
     @Mock
-    private EmailService emailService;
+    private EmailJobEnqueueService emailJobEnqueueService;
 
     @InjectMocks
     private AssignmentServiceImpl assignmentService;
@@ -211,6 +215,99 @@ class AssignmentServiceImplTest {
         );
 
         assertSame(ErrorCode.DEVICE_ALREADY_RETURNED, exception.getErrorCode());
+    }
+
+    @Test
+    void upcomingReminderEnqueuesSnapshotWithoutMarkingAssignmentSent() {
+        User user = User.builder()
+                .id(UUID.randomUUID())
+                .email("reminder@device.test")
+                .name("Reminder User")
+                .build();
+        Device device = Device.builder()
+                .id(UUID.randomUUID())
+                .name("Laptop")
+                .serialNumber("REMINDER-1")
+                .build();
+        DeviceAssignment assignment = DeviceAssignment.builder()
+                .id(UUID.randomUUID())
+                .user(user)
+                .device(device)
+                .status(DeviceAssignmentStatus.ACTIVE)
+                .expectedReturnAt(LocalDateTime.now().plusHours(2))
+                .build();
+        ReflectionTestUtils.setField(assignmentService, "reminderHours", 24L);
+        when(deviceAssignmentRepository
+                .findByStatusAndReminderNotifiedAtIsNullAndExpectedReturnAtAfterAndExpectedReturnAtBefore(
+                        eq(DeviceAssignmentStatus.ACTIVE), any(), any()))
+                .thenReturn(List.of(assignment));
+        when(emailJobEnqueueService.enqueue(any())).thenReturn(true);
+
+        assertEquals(1, assignmentService.sendUpcomingDueNotifications());
+        assertNull(assignment.getReminderNotifiedAt());
+
+        ArgumentCaptor<EmailJobEnqueueCommand> captor = ArgumentCaptor.forClass(EmailJobEnqueueCommand.class);
+        verify(emailJobEnqueueService).enqueue(captor.capture());
+        EmailJobEnqueueCommand command = captor.getValue();
+        assertEquals(EmailJobType.ASSIGNMENT_REMINDER, command.jobType());
+        assertEquals(assignment.getId(), command.assignmentId());
+        assertEquals(assignment.getExpectedReturnAt(), command.assignmentExpectedReturnAt());
+        assertTrue(command.logicalKey().contains(assignment.getId().toString()));
+    }
+
+    @Test
+    void overdueNotificationEnqueuesSnapshotWithoutMarkingAssignmentSent() {
+        User user = User.builder()
+                .id(UUID.randomUUID())
+                .email("overdue@device.test")
+                .name("Overdue User")
+                .build();
+        Device device = Device.builder()
+                .id(UUID.randomUUID())
+                .name("Monitor")
+                .serialNumber("OVERDUE-1")
+                .build();
+        DeviceAssignment assignment = DeviceAssignment.builder()
+                .id(UUID.randomUUID())
+                .user(user)
+                .device(device)
+                .status(DeviceAssignmentStatus.OVERDUE)
+                .expectedReturnAt(LocalDateTime.now().minusDays(1))
+                .build();
+        when(deviceAssignmentRepository.findOverdueForNotification(DeviceAssignmentStatus.OVERDUE))
+                .thenReturn(List.of(assignment));
+        when(emailJobEnqueueService.enqueue(any())).thenReturn(true);
+
+        assertEquals(1, assignmentService.sendOverdueNotifications());
+        assertNull(assignment.getOverdueNotifiedAt());
+        verify(emailJobEnqueueService).enqueue(argThat(command ->
+                command.jobType() == EmailJobType.ASSIGNMENT_OVERDUE
+                        && assignment.getId().equals(command.assignmentId())
+        ));
+    }
+
+    @Test
+    void dailyReportReturnsOnlyNewlyEnqueuedRecipients() {
+        DeviceAssignment assignment = DeviceAssignment.builder()
+                .id(UUID.randomUUID())
+                .user(User.builder().name("Employee").email("employee@device.test").build())
+                .device(Device.builder().name("Phone").serialNumber("REPORT-1").build())
+                .status(DeviceAssignmentStatus.OVERDUE)
+                .expectedReturnAt(LocalDateTime.now().minusDays(1))
+                .build();
+        User first = User.builder().id(UUID.randomUUID()).email("admin@device.test").build();
+        User duplicate = User.builder().id(UUID.randomUUID()).email("it@device.test").build();
+        when(deviceAssignmentRepository.findByStatusOrderByExpectedReturnAtAsc(DeviceAssignmentStatus.OVERDUE))
+                .thenReturn(List.of(assignment));
+        when(userRepository.findDistinctByRoles_NameIn(List.of("ADMIN", "IT_STAFF")))
+                .thenReturn(List.of(first, duplicate));
+        when(emailJobEnqueueService.enqueue(any())).thenReturn(true, false);
+
+        assertEquals(1, assignmentService.sendDailyOverdueSummary());
+        verify(emailJobEnqueueService, times(2)).enqueue(argThat(command ->
+                command.jobType() == EmailJobType.DAILY_OVERDUE_REPORT
+                        && command.assignmentId() == null
+        ));
     }
 
     private void loginAs(String email) {

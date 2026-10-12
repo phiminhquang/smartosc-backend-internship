@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: device-management-frontend
+    runtime: static
+    rootDir: IdeaProjects/device/device/frontend
+    autoDeployTrigger: "off"
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: no-referrer
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://placeholder.invalid/api

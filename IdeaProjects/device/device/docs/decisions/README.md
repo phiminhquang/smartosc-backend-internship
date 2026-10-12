@@ -26,3 +26,4 @@ Không cần ADR cho đổi tên, chỉnh giao diện nhỏ hoặc implementatio
 ## Danh mục
 
 - `001-password-reset-token-and-session-revocation.md`: dùng reset token dạng hash và thu hồi JWT bằng token version.
+- `002-durable-email-outbox.md`: transactional outbox, retry/idempotency và bảo vệ reset token cho email nền; Accepted ngày 2026-10-10.

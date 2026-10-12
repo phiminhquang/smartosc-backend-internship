@@ -27,7 +27,7 @@ Không dùng lịch sử chat làm nguồn trạng thái. Không đánh dấu ho
 - Hệ thống đã có quản lý thiết bị, người dùng, vai trò, cấp phát, gia hạn, hoàn trả, sửa chữa, dashboard, email và import/export.
 - API thiết bị đã hỗ trợ tìm kiếm và phân trang; nhiều API người dùng, cấp phát, sửa chữa và gia hạn vẫn trả danh sách đầy đủ.
 - Export thiết bị đang đọc toàn bộ dữ liệu bằng `findAll()`.
-- Scheduler và password reset còn gửi email đồng bộ; lỗi email ở một số luồng đang ghi bằng `System.out`.
+- Baseline ban đầu có scheduler/password reset gửi email đồng bộ và ghi lỗi bằng `System.out`; sau PRD-406/501, production Java không còn console output trực tiếp và các sự kiện API/job/scheduler dùng log `event` + trường cho phép.
 - `Device` đã có trường `version` và một số thao tác đã khóa bản ghi, nhưng chưa có integration test MySQL thật cho các request đồng thời.
 - Test hiện tại chủ yếu là unit/web-security test cô lập; chưa có MySQL test/staging an toàn để chạy full integration test và Flyway.
 - Repository chưa có Docker/Compose, CI, metrics dashboard hoặc quy trình backup/restore được kiểm chứng.
@@ -225,17 +225,98 @@ Trạng thái: **Approved by implementation scope — giữ nguyên endpoint, qu
 - When nghiệp vụ tạo yêu cầu email,
 - Then nghiệp vụ chính phải tuân theo contract đã chốt, công việc email được lưu bền vững, có thử lại và không gửi trùng.
 
-### FR-6: Có thể tìm nguyên nhân lỗi
+### FR-6: Rate limit dùng chung cho login và password reset
+
+- `POST /api/auth/token` và `POST /api/auth/password-reset/request` áp dụng đồng thời
+  bucket theo IP client và email đã chuẩn hóa trước khi gọi service nghiệp vụ.
+- Bucket là fixed window lưu trong MySQL để mọi instance backend dùng chung. Mặc định:
+  login `20/IP` và `5/identity` trong `5 phút`; password reset `10/IP` và
+  `3/identity` trong `15 phút`. Mọi ngưỡng/window đều cấu hình được.
+- Database chỉ lưu SHA-256 của action, scope, discriminator và thời điểm đầu window;
+  không lưu email hoặc IP dạng rõ trong bảng rate limit.
+- Email tồn tại và không tồn tại đi qua cùng policy/counter. Khi vượt bất kỳ bucket
+  nào, API trả HTTP `429`, code `1057` và header `Retry-After`; password reset không
+  thực hiện account lookup hoặc tạo token/job ở request bị chặn.
+- Password-reset request hợp lệ dùng response window mặc định tối thiểu `150 ms`
+  cộng jitter ngẫu nhiên `0-25 ms` để che chênh lệch lookup/outbox đã đo. Hai giá trị
+  cấu hình được, fail-fast ngoài khoảng 0-5 giây; response `429` không bị trì hoãn.
+- Backend dùng địa chỉ remote đã được servlet container xử lý. Khi chạy sau reverse
+  proxy, chỉ tin forwarded headers từ proxy nội bộ và không public backend trực tiếp.
+
+### FR-7: Có thể tìm nguyên nhân lỗi
 
 - Given một request hoặc job lỗi,
 - When người vận hành có request/job ID,
 - Then họ phải tìm được log, trạng thái và số liệu liên quan mà không thấy secret/token/mật khẩu.
+- Backend nhận hoặc sinh `X-Request-ID`. Giá trị client gửi chỉ được giữ khi khớp
+  `[A-Za-z0-9][A-Za-z0-9._-]{0,63}`; nếu thiếu hoặc không hợp lệ thì backend sinh UUID.
+- Mọi HTTP response trả lại `X-Request-ID`. Error body `ApiResponse` có trường
+  `requestId`; success body giữ tương thích và dùng response header làm nguồn ID.
+- Log hoàn tất request và log lỗi có `request_id`. Email job tạo trong request lưu
+  `request_id` để worker log đồng thời `request_id` và `job_id`; job do scheduler tạo
+  ngoài HTTP có `request_id = NULL` và được truy vết bằng `job_id`.
+- Request ID chỉ dùng cho correlation/support, không dùng để xác thực, phân quyền hoặc
+  làm idempotency key; log không ghi query string, request body hoặc secret.
+- `GET /actuator/health`, `/actuator/health/liveness` và
+  `/actuator/health/readiness` là các probe công khai tối thiểu, chỉ trả trạng thái và
+  không lộ component/detail. Readiness phụ thuộc application state và database; SMTP
+  không chặn readiness vì email đã được lưu bền vững để worker retry.
+- Chỉ `health` được expose qua HTTP ở bước PRD-503. Actuator index và mọi endpoint
+  quản trị khác không được truy cập ẩn danh; metrics chỉ được mở theo contract bảo vệ
+  của PRD-504/505.
+- Metrics dùng prefix/tag có cardinality hữu hạn: HTTP request theo route template,
+  method/status/outcome; datasource/JVM theo binder chuẩn; scheduler theo tên task và
+  success/failure; email job theo enum status/type và outcome cố định. Không dùng
+  request ID, job ID, email, exception message hoặc dữ liệu người dùng làm metric tag.
+- Các metric vận hành tối thiểu gồm `http.server.requests`, connection pool JDBC/Hikari,
+  JVM, `device.scheduler.duration`, `device.email.jobs`, batch size, delivery outcome,
+  lease recovery và retention cleanup.
+- Profile local `monitoring` đặt Actuator trên cổng quản trị `8081` chỉ nằm trong mạng
+  Compose. Prometheus scrape `backend:8081/actuator/prometheus`; cổng API `8080` không
+  phục vụ metrics cho request ẩn danh. Prometheus và Grafana chỉ bind loopback; Grafana
+  anonymous Viewer là cấu hình local, không phải contract cho Internet/demo.
+- Dashboard cơ sở phải hiển thị scrape health, HTTP p95/error, JDBC pool, durable email
+  jobs/delivery outcome, scheduler duration và JVM heap; panel chưa có sự kiện được phép
+  hiện `No data` thay vì tạo dữ liệu giả.
 
-### FR-7: Khôi phục được
+### FR-8: Khôi phục được
 
 - Given database demo/test bị mất hoặc bản phát hành mới lỗi,
 - When áp dụng runbook,
 - Then người dùng có thể restore dữ liệu hoặc quay lại phiên bản ứng dụng trước và kiểm tra tính toàn vẹn.
+
+## Contract deploy demo CV — PRD-601/602/603
+
+- Người dùng chọn demo portfolio ngân sách 0đ và cho phép tiếp tục cấu hình ngày
+  2026-10-12. Phương án hiện tại là backend Render Free Web Service, MySQL Aiven
+  Free, frontend Render Static Site và Resend Free qua HTTPS API. Koyeb bị loại vì
+  người dùng mới chỉ được dùng gói trả phí; Render Free chặn SMTP 25/465/587.
+  Aiven `device_demo`, Render account và Resend onboarding email đã có; Render
+  services/migration cloud chưa chạy nên PRD-601 chưa hoàn tất.
+- Backend dùng riêng profile `demo`, health/readiness trên cổng API 8080, chỉ expose
+  health. Không bật profile `monitoring` trên Internet. Docker image demo giới hạn
+  heap 256 MiB, email batch/thread 2, Hikari tối đa 5 connections và Tomcat 16 threads.
+- `DB_URL` chỉ chứa JDBC host/port/database; credentials qua secret env. MySQL dùng
+  `VERIFY_IDENTITY`, CA từ `DB_CA_CERT_BASE64` và truststore sinh lúc container khởi động;
+  startup thất bại khi thiếu CA. Migration chỉ được chạy trên database demo trống sau
+  khi người dùng duyệt PRD-606, không dùng service Aiven đang chứa dữ liệu thật.
+- Frontend gọi `https://<backend-host>/api` qua `VITE_API_BASE_URL`. Backend chỉ cho
+  origin HTTPS chính xác trong `FRONTEND_ORIGIN`, không dùng wildcard/credentials.
+  CORS chỉ áp dụng `/api/**`, cho Authorization/Content-Type/X-Request-ID, expose
+  X-Request-ID/Retry-After; preflight không cần JWT nhưng API vẫn giữ quyền hiện có.
+  JSON/error contract không đổi. Antigravity cấu hình SPA reload và build frontend.
+- Giới hạn công khai: backend Free ngủ khi idle nên scheduler/worker dừng; reminder
+  trước hạn có thể lỡ, daily cron không tự chạy bù, job còn hợp lệ xử lý khi thức.
+  Email reset quá hạn bị EXPIRED, delivery có lease mơ hồ giữ UNKNOWN; không cam kết
+  mọi job sẽ gửi sau khi thức. UI hiện chưa có màn hình assignment/return/repair/extension;
+  các luồng đó trình diễn bằng API/test, không coi backend endpoint là tính năng UI.
+- Profile demo dùng Resend API với `Idempotency-Key` ổn định theo email job ID;
+  local/dev/test tiếp tục SMTP. Khi chưa có custom domain, recipient bị giới hạn bằng
+  allow-list tới email chủ tài khoản đã thử thành công. Không tuyên bố public demo gửi
+  email tùy ý hoặc exactly-once tuyệt đối; key chỉ đi qua secret store.
+- Public demo chỉ dùng dữ liệu tổng hợp nhỏ. Benchmark 100k và dashboard đầy đủ giữ
+  bằng chứng local. PRD-602 kiểm chứng image trên MySQL TLS cô lập, không thay thế
+  PRD-606/608 kiểm tra thật Render/Aiven/Resend và rate limit sau proxy.
 
 ## Yêu cầu phi chức năng
 
@@ -255,7 +336,8 @@ Trạng thái: **Approved by implementation scope — giữ nguyên endpoint, qu
 - [ ] Import/export lớn được xử lý theo nhóm hoặc công việc nền và có test giới hạn tài nguyên.
 - [ ] Có test MySQL thật cho các thao tác đồng thời quan trọng.
 - [ ] SMTP lỗi không làm mất công việc email; retry và chống gửi trùng có bằng chứng.
-- [ ] Có request ID, log chuẩn, health check và dashboard tối thiểu.
+- [x] Có request ID, log chuẩn, health check và dashboard tối thiểu; PRD-508/509 đã
+  xác nhận correlation từ UI tới log, ảnh dashboard và network/security boundary local.
 - [ ] Có báo cáo đo dữ liệu lớn trước/sau, không dùng số liệu tự suy đoán.
 - [ ] Backup/restore và rollback được thực hành trên demo/test.
 - [ ] Backend test, frontend lint/build, migration test, E2E áp dụng và `git diff --check` đều có bằng chứng.

@@ -16,7 +16,7 @@ check_local_env() {
     fi
 
     local key
-    for key in LOCAL_DB_PASSWORD LOCAL_ADMIN_PASSWORD LOCAL_JWT_SIGNER_KEY; do
+    for key in LOCAL_DB_PASSWORD LOCAL_ADMIN_PASSWORD LOCAL_JWT_SIGNER_KEY LOCAL_EMAIL_JOB_SECRET_KEY; do
         if ! grep -Eq "^${key}=.+" .env; then
             printf 'Missing or empty local setting in .env: %s\n' "${key}" >&2
             return 1

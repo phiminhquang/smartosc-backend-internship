@@ -4,6 +4,7 @@ import com.example.device.dto.request.ExtensionRequestCreationRequest;
 import com.example.device.dto.request.ExtensionReviewRequest;
 import com.example.device.dto.response.ExtensionResponse;
 import com.example.device.enums.DeviceAssignmentStatus;
+import com.example.device.enums.EmailJobType;
 import com.example.device.enums.ExtensionRequestStatus;
 import com.example.device.exception.AppException;
 import com.example.device.exception.ErrorCode;
@@ -15,7 +16,7 @@ import com.example.device.model.User;
 import com.example.device.repository.AssignmentExtensionRepository;
 import com.example.device.repository.DeviceAssignmentRepository;
 import com.example.device.repository.UserRepository;
-import com.example.device.service.EmailService;
+import com.example.device.service.EmailJobEnqueueService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,7 +47,7 @@ class AssignmentExtensionServiceImplTest {
     private UserRepository userRepository;
 
     @Mock
-    private EmailService emailService;
+    private EmailJobEnqueueService emailJobEnqueueService;
 
     @Mock
     private AssignmentExtensionMapper extensionMapper;
@@ -217,11 +218,59 @@ class AssignmentExtensionServiceImplTest {
         assertEquals("admin@gmail.com", extension.getReviewedBy());
         assertNotNull(extension.getReviewedAt());
 
-        verify(emailService).sendEmail(
-                eq("employee@gmail.com"),
-                anyString(),
-                anyString()
-        );
+        verify(emailJobEnqueueService).enqueue(argThat(command ->
+                command.jobType() == EmailJobType.EXTENSION_REVIEWED
+                        && command.recipient().equals("employee@gmail.com")
+                        && command.logicalKey().contains(requestId.toString())
+        ));
+    }
+
+    @Test
+    void createRequestEnqueuesOneAdminNotificationPerRecipient() {
+        UUID assignmentId = UUID.randomUUID();
+        UUID extensionId = UUID.randomUUID();
+        User employee = User.builder()
+                .id(UUID.randomUUID())
+                .email("employee@device.test")
+                .name("Employee")
+                .build();
+        User admin = User.builder()
+                .id(UUID.randomUUID())
+                .email("admin@device.test")
+                .name("Admin")
+                .build();
+        DeviceAssignment assignment = DeviceAssignment.builder()
+                .id(assignmentId)
+                .user(employee)
+                .device(Device.builder().name("Dell Latitude").build())
+                .status(DeviceAssignmentStatus.ACTIVE)
+                .expectedReturnAt(LocalDateTime.now().plusDays(2))
+                .build();
+        ExtensionRequestCreationRequest request = new ExtensionRequestCreationRequest();
+        request.setRequestedReturnAt(LocalDateTime.now().plusDays(5));
+        request.setReason("Cần dùng thêm");
+        AssignmentExtension extension = AssignmentExtension.builder()
+                .id(extensionId)
+                .reason(request.getReason())
+                .requestedReturnAt(request.getRequestedReturnAt())
+                .build();
+
+        loginAs(employee.getEmail());
+        when(assignmentRepository.findByIdForUpdate(assignmentId)).thenReturn(Optional.of(assignment));
+        when(userRepository.findByEmail(employee.getEmail())).thenReturn(Optional.of(employee));
+        when(extensionMapper.toEntity(request)).thenReturn(extension);
+        when(extensionRepository.save(extension)).thenReturn(extension);
+        when(userRepository.findDistinctByRoles_Name("ADMIN")).thenReturn(java.util.List.of(admin));
+        when(extensionMapper.toResponse(extension)).thenReturn(new ExtensionResponse());
+
+        extensionService.createRequest(assignmentId, request);
+
+        verify(emailJobEnqueueService).enqueue(argThat(command ->
+                command.jobType() == EmailJobType.EXTENSION_REQUESTED
+                        && command.recipient().equals(admin.getEmail())
+                        && command.logicalKey().contains(extensionId.toString())
+                        && command.variables().get("content").toString().contains(request.getReason())
+        ));
     }
 
     private void loginAs(String email) {

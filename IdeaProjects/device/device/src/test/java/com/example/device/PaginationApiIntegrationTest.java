@@ -19,7 +19,7 @@ import com.example.device.repository.DeviceRepairRepository;
 import com.example.device.repository.DeviceRepository;
 import com.example.device.repository.RoleRepository;
 import com.example.device.repository.UserRepository;
-import com.example.device.service.EmailService;
+import com.example.device.service.EmailJobEnqueueService;
 import com.example.device.service.DeviceFileService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -86,7 +86,7 @@ class PaginationApiIntegrationTest {
     @Autowired
     private PlatformTransactionManager transactionManager;
     @MockitoBean
-    private EmailService emailService;
+    private EmailJobEnqueueService emailJobEnqueueService;
 
     private User employee;
     private Device device;
