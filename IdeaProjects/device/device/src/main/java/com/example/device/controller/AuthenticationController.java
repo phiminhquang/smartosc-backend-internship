@@ -8,7 +8,10 @@ import com.example.device.dto.response.AuthenticationResponse;
 import com.example.device.dto.response.IntrospectResponse;
 import com.example.device.service.AuthenticationService;
 import com.example.device.service.PasswordResetService;
+import com.example.device.service.PasswordResetTimingGuard;
+import com.example.device.service.RateLimitService;
 import com.example.device.dto.response.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,11 +24,15 @@ public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
     private final PasswordResetService passwordResetService;
+    private final RateLimitService rateLimitService;
+    private final PasswordResetTimingGuard passwordResetTimingGuard;
 
     @PostMapping("/token")
     public ApiResponse<AuthenticationResponse> authenticate(
-            @Valid @RequestBody AuthenticationRequest request
+            @Valid @RequestBody AuthenticationRequest request,
+            HttpServletRequest servletRequest
     ) {
+        rateLimitService.checkLogin(request.getEmail(), servletRequest.getRemoteAddr());
         return ApiResponse.<AuthenticationResponse>builder()
                 .result(authenticationService.authenticate(request))
                 .build();
@@ -43,9 +50,13 @@ public class AuthenticationController {
     @PostMapping("/password-reset/request")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<Void> requestPasswordReset(
-            @Valid @RequestBody PasswordResetRequest request
+            @Valid @RequestBody PasswordResetRequest request,
+            HttpServletRequest servletRequest
     ) {
+        long timingStarted = passwordResetTimingGuard.start();
+        rateLimitService.checkPasswordResetRequest(request.getEmail(), servletRequest.getRemoteAddr());
         passwordResetService.requestReset(request.getEmail());
+        passwordResetTimingGuard.awaitNeutralResponseWindow(timingStarted);
 
         return ApiResponse.<Void>builder()
                 .message("Nếu email tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi")

@@ -72,6 +72,21 @@ Người dùng quên mật khẩu cần có cách lấy lại quyền truy cập
 - Frontend kiểm tra token không rỗng, độ dài mật khẩu và xác nhận mật khẩu trước khi gọi API.
 - Sau khi thành công, người dùng có đường dẫn quay lại trang đăng nhập.
 
+### FR-6: Rate limit request reset
+
+- Mỗi request hợp lệ tiêu thụ hai fixed-window bucket dùng chung trong MySQL: theo
+  IP client và theo email đã trim/lowercase.
+- Mặc định cho phép `10` request/IP và `3` request/identity trong `15 phút`; các giá
+  trị này cấu hình được theo môi trường.
+- Bucket key được SHA-256 trước khi lưu, nên bảng rate limit không chứa email/IP dạng rõ.
+- Kiểm tra chạy trước account lookup cho cả email tồn tại và không tồn tại. Vượt ngưỡng
+  trả HTTP `429`, code `1057`, thông điệp chung và header `Retry-After`.
+- Request hợp lệ chỉ trả HTTP `202` sau cửa sổ tối thiểu `150 ms` cộng jitter ngẫu
+  nhiên `0-25 ms`; hai giá trị cấu hình được và bị giới hạn tối đa 5 giây. Cửa sổ
+  bắt đầu trước rate limit/account lookup nhưng không trì hoãn response `429`.
+- Frontend hiện có đã hiển thị `message` lỗi chung từ API và chặn double-submit, nên
+  không cần thay đổi source frontend cho contract này.
+
 ## Yêu cầu bảo mật
 
 - Token được tạo bằng bộ sinh số ngẫu nhiên mật mã với tối thiểu 256 bit entropy.
@@ -96,7 +111,7 @@ Người dùng quên mật khẩu cần có cách lấy lại quyền truy cập
 - [ ] Backend compile/test thành công.
 - [ ] Frontend lint/build thành công.
 - [ ] Migration chạy thành công trên database test/staging có schema V1.
-- [ ] Trước public production, cơ chế gửi email/rate limit không tạo timing side-channel rõ ràng giữa email tồn tại và không tồn tại.
+- [x] Trước public production, cơ chế gửi email/rate limit không tạo timing side-channel rõ ràng giữa email tồn tại và không tồn tại; PR-209 đạt benchmark cô lập ngày 2026-10-11.
 
 ## Giả định
 

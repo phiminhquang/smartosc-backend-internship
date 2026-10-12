@@ -9,6 +9,7 @@ import com.example.device.dto.response.PageResult;
 import com.example.device.enums.DeviceAssignmentStatus;
 import com.example.device.enums.DeviceReturnCondition;
 import com.example.device.enums.DeviceState;
+import com.example.device.enums.EmailJobType;
 import com.example.device.exception.AppException;
 import com.example.device.exception.ErrorCode;
 import com.example.device.mapper.DeviceAssignmentMapper;
@@ -19,7 +20,8 @@ import com.example.device.repository.DeviceAssignmentRepository;
 import com.example.device.repository.DeviceRepository;
 import com.example.device.repository.UserRepository;
 import com.example.device.service.AssignmentService;
-import com.example.device.service.EmailService;
+import com.example.device.service.EmailJobEnqueueCommand;
+import com.example.device.service.EmailJobEnqueueService;
 import com.example.device.service.PaginationSupport;
 import com.example.device.specification.DeviceAssignmentSpecification;
 import lombok.RequiredArgsConstructor;
@@ -59,7 +61,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     private final UserRepository userRepository;
     private final DeviceRepository deviceRepository;
     private final DeviceAssignmentMapper deviceAssignmentMapper;
-    private final EmailService emailService;
+    private final EmailJobEnqueueService emailJobEnqueueService;
 
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy 'lúc' h:mm:ss a",
@@ -114,30 +116,32 @@ public class AssignmentServiceImpl implements AssignmentService {
     @Transactional
     public int sendOverdueNotifications() {
         List<DeviceAssignment> assignments = deviceAssignmentRepository.findOverdueForNotification(DeviceAssignmentStatus.OVERDUE);
-        int sent = 0;
+        int enqueued = 0;
 
         for (DeviceAssignment assignment : assignments) {
-            try {
-                User user = assignment.getUser();
-                Device device = assignment.getDevice();
-
-                Map<String, Object> variables = Map.of(
-                        "userName", user.getName(),
-                        "deviceName", device.getName(),
-                        "serialNumber", device.getSerialNumber(),
-                        "expectedReturnAt", formatLocalTime(assignment.getExpectedReturnAt())
-                );
-
-                emailService.sendHtmlEmail(user.getEmail(), "Thông báo thiết bị quá hạn", "email/device-overdue", variables);
-                assignment.setOverdueNotifiedAt(LocalDateTime.now());
-                sent++;
-            } catch (Exception e) {
-                System.out.println("Không gửi được email tới " + assignment.getUser().getEmail() + ": " + e.getMessage());
+            User user = assignment.getUser();
+            Device device = assignment.getDevice();
+            Map<String, Object> variables = Map.of(
+                    "userName", user.getName(),
+                    "deviceName", device.getName(),
+                    "serialNumber", device.getSerialNumber(),
+                    "expectedReturnAt", formatLocalTime(assignment.getExpectedReturnAt())
+            );
+            if (emailJobEnqueueService.enqueue(new EmailJobEnqueueCommand(
+                    EmailJobType.ASSIGNMENT_OVERDUE,
+                    user.getEmail(),
+                    "Thông báo thiết bị quá hạn",
+                    "email/device-overdue",
+                    variables,
+                    "assignment-overdue:%s:%s:%s".formatted(
+                            assignment.getId(), assignment.getExpectedReturnAt(), user.getId()),
+                    assignment.getId(),
+                    assignment.getExpectedReturnAt()
+            ))) {
+                enqueued++;
             }
         }
-
-        deviceAssignmentRepository.saveAll(assignments);
-        return sent;
+        return enqueued;
     }
 
     @Override
@@ -174,6 +178,7 @@ public class AssignmentServiceImpl implements AssignmentService {
     }
 
     @Override
+    @Transactional
     public int sendDailyOverdueSummary() {
         List<DeviceAssignment> assignments = deviceAssignmentRepository.findByStatusOrderByExpectedReturnAtAsc(DeviceAssignmentStatus.OVERDUE);
         if (assignments.isEmpty()) return 0;
@@ -191,18 +196,25 @@ public class AssignmentServiceImpl implements AssignmentService {
                 )).toList();
 
         Map<String, Object> variables = Map.of("assignments", rows, "total", rows.size());
-        String subject = "Báo cáo thiết bị quá hạn - " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        LocalDate reportDate = LocalDate.now(VN_ZONE);
+        String subject = "Báo cáo thiết bị quá hạn - " + reportDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
-        int sent = 0;
+        int enqueued = 0;
         for (User recipient : recipients) {
-            try {
-                emailService.sendHtmlEmail(recipient.getEmail(), subject, "email/overdue-report", variables);
-                sent++;
-            } catch (Exception e) {
-                System.out.println("Không gửi được báo cáo tới " + recipient.getEmail() + ": " + e.getMessage());
+            if (emailJobEnqueueService.enqueue(new EmailJobEnqueueCommand(
+                    EmailJobType.DAILY_OVERDUE_REPORT,
+                    recipient.getEmail(),
+                    subject,
+                    "email/overdue-report",
+                    variables,
+                    "daily-overdue-report:%s:%s".formatted(reportDate, recipient.getId()),
+                    null,
+                    null
+            ))) {
+                enqueued++;
             }
         }
-        return sent;
+        return enqueued;
     }
 
     @Override
@@ -272,36 +284,32 @@ public class AssignmentServiceImpl implements AssignmentService {
                 .findByStatusAndReminderNotifiedAtIsNullAndExpectedReturnAtAfterAndExpectedReturnAtBefore(
                         DeviceAssignmentStatus.ACTIVE, now, deadline);
 
-        int sent = 0;
+        int enqueued = 0;
 
         for (DeviceAssignment assignment : assignments) {
-            try {
-                User user = assignment.getUser();
-                Device device = assignment.getDevice();
-
-                Map<String, Object> variables = Map.of(
-                        "userName", user.getName(),
-                        "deviceName", device.getName(),
-                        "serialNumber", device.getSerialNumber(),
-                        "expectedReturnAt", formatLocalTime(assignment.getExpectedReturnAt())
-                );
-
-                emailService.sendHtmlEmail(
-                        user.getEmail(),
-                        "Nhắc nhở thiết bị sắp đến hạn trả",
-                        "email/device-reminder",
-                        variables
-                );
-                assignment.setReminderNotifiedAt(LocalDateTime.now());
-                sent++;
-            } catch (Exception e) {
-                System.out.println("Không gửi được email nhắc hạn tới "
-                        + assignment.getUser().getEmail() + ": " + e.getMessage());
+            User user = assignment.getUser();
+            Device device = assignment.getDevice();
+            Map<String, Object> variables = Map.of(
+                    "userName", user.getName(),
+                    "deviceName", device.getName(),
+                    "serialNumber", device.getSerialNumber(),
+                    "expectedReturnAt", formatLocalTime(assignment.getExpectedReturnAt())
+            );
+            if (emailJobEnqueueService.enqueue(new EmailJobEnqueueCommand(
+                    EmailJobType.ASSIGNMENT_REMINDER,
+                    user.getEmail(),
+                    "Nhắc nhở thiết bị sắp đến hạn trả",
+                    "email/device-reminder",
+                    variables,
+                    "assignment-reminder:%s:%s:%s".formatted(
+                            assignment.getId(), assignment.getExpectedReturnAt(), user.getId()),
+                    assignment.getId(),
+                    assignment.getExpectedReturnAt()
+            ))) {
+                enqueued++;
             }
         }
-
-        deviceAssignmentRepository.saveAll(assignments);
-        return sent;
+        return enqueued;
     }
 
     @Override

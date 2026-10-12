@@ -10,6 +10,12 @@ on:
       - "IdeaProjects/device/device/**"
       - ".github/workflows/device-ci.yml"
   workflow_dispatch:
+    inputs:
+      deploy_demo:
+        description: Deploy the verified main commit to the demo environment
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -72,12 +78,15 @@ jobs:
         run: |
           local_password="$(openssl rand -hex 32)"
           local_jwt_key="$(openssl rand -hex 64)"
+          local_email_job_key="$(openssl rand -base64 32)"
           printf '::add-mask::%s\n' "${local_password}"
           printf '::add-mask::%s\n' "${local_jwt_key}"
+          printf '::add-mask::%s\n' "${local_email_job_key}"
           printf 'LOCAL_DB_PASSWORD=%s\n' "${local_password}" >> "${GITHUB_ENV}"
           printf 'LOCAL_ADMIN_PASSWORD=%s\n' "${local_password}" >> "${GITHUB_ENV}"
           printf 'ADMIN_PASSWORD=%s\n' "${local_password}" >> "${GITHUB_ENV}"
           printf 'LOCAL_JWT_SIGNER_KEY=%s\n' "${local_jwt_key}" >> "${GITHUB_ENV}"
+          printf 'LOCAL_EMAIL_JOB_SECRET_KEY=%s\n' "${local_email_job_key}" >> "${GITHUB_ENV}"
       - run: npm ci
         working-directory: IdeaProjects/device/device/frontend
       - name: Install Playwright Chromium & dependencies
@@ -88,3 +97,45 @@ jobs:
       - run: bash scripts/verify.sh frontend-e2e
       - if: always()
         run: docker compose down
+
+  deploy-demo:
+    needs: [safe, integration, compose-smoke]
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      vars.DEMO_DEPLOY_ENABLED == 'true' &&
+      (github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && inputs.deploy_demo))
+    runs-on: ubuntu-24.04
+    environment: demo
+    concurrency:
+      group: device-demo-deploy
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: IdeaProjects/device/device
+    steps:
+      - uses: actions/checkout@v5
+      - name: Deploy backend exact commit and wait for Render
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK_URL }}
+          RENDER_API_TOKEN: ${{ secrets.RENDER_API_TOKEN }}
+          RENDER_SERVICE_ID: ${{ vars.RENDER_BACKEND_SERVICE_ID }}
+          RENDER_COMMIT_SHA: ${{ github.sha }}
+          RENDER_SERVICE_LABEL: backend
+        run: bash scripts/render-deploy-and-wait.sh --confirm-deploy
+      - name: Deploy frontend exact commit and wait for Render
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK_URL }}
+          RENDER_API_TOKEN: ${{ secrets.RENDER_API_TOKEN }}
+          RENDER_SERVICE_ID: ${{ vars.RENDER_FRONTEND_SERVICE_ID }}
+          RENDER_COMMIT_SHA: ${{ github.sha }}
+          RENDER_SERVICE_LABEL: frontend
+        run: bash scripts/render-deploy-and-wait.sh --confirm-deploy
+      - name: Verify the deployed demo
+        env:
+          DEMO_BACKEND_URL: ${{ vars.DEMO_BACKEND_URL }}
+          DEMO_FRONTEND_URL: ${{ vars.DEMO_FRONTEND_URL }}
+        run: |
+          bash scripts/post-deploy-check.sh \
+            --backend-url "${DEMO_BACKEND_URL}" \
+            --frontend-url "${DEMO_FRONTEND_URL}"

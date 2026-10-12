@@ -32,19 +32,25 @@ services:
       mailpit:
         condition: service_started
     environment:
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: dev,monitoring
       DB_URL: jdbc:mysql://mysql:3306/device_db?sslMode=DISABLED&allowPublicKeyRetrieval=true
       DB_USERNAME: device_app
       DB_PASSWORD: ${LOCAL_DB_PASSWORD:?Set LOCAL_DB_PASSWORD in .env}
       ADMIN_EMAIL: admin@device.local
       ADMIN_PASSWORD: ${LOCAL_ADMIN_PASSWORD:?Set LOCAL_ADMIN_PASSWORD in .env}
       JWT_SIGNER_KEY: ${LOCAL_JWT_SIGNER_KEY:?Set LOCAL_JWT_SIGNER_KEY in .env}
+      EMAIL_JOB_SECRET_KEY_BASE64: ${LOCAL_EMAIL_JOB_SECRET_KEY:?Set LOCAL_EMAIL_JOB_SECRET_KEY in .env}
+      EMAIL_JOB_WORKER_ENABLED: "true"
       MAIL_HOST: mailpit
       PASSWORD_RESET_BASE_URL: http://localhost:5173/reset-password
+      PASSWORD_RESET_RESPONSE_MIN_DURATION: ${PASSWORD_RESET_RESPONSE_MIN_DURATION:-150ms}
+      PASSWORD_RESET_RESPONSE_JITTER: ${PASSWORD_RESET_RESPONSE_JITTER:-25ms}
     ports:
       - "127.0.0.1:8080:8080"
+    expose:
+      - "8081"
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/v3/api-docs"]
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8081/actuator/health/readiness"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -70,5 +76,42 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: ["monitoring"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=7d"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    profiles: ["monitoring"]
+    depends_on:
+      prometheus:
+        condition: service_started
+    environment:
+      GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+
 volumes:
   mysql_data:
+  prometheus_data:

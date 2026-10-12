@@ -56,9 +56,36 @@ bash scripts/verify.sh frontend
 
 HTTP client dùng base URL `/api`. Access token được giữ trong `sessionStorage` với khóa `device_access_token` và tự gắn vào header `Authorization`.
 
+## Triển khai Render Static Site (PRD-603)
+
+Khi triển khai frontend dưới dạng **Render Static Site**:
+
+1. **Thông số cài đặt trên Render Dashboard**:
+   - **Root Directory**: `IdeaProjects/device/device/frontend` (đường dẫn từ Git repository root).
+   - **Build Command**: `npm ci && npm run build`
+   - **Publish Directory**: `dist`
+2. **SPA Rewrite (Bắt buộc cho React Router client-side routing)**:
+   - Trong mục **Redirects/Rewrites**:
+     - **Source**: `/*`
+     - **Destination**: `/index.html`
+     - **Action**: `Rewrite`
+3. **Security Headers**:
+   - `X-Content-Type-Options: nosniff`
+   - `X-Frame-Options: DENY`
+   - `Referrer-Policy: no-referrer`
+4. **Biến môi trường (Build-time Environment Variable)**:
+   - `VITE_API_BASE_URL`: Địa chỉ Backend REST API.
+   - Bước 1: Khi tạo Static Site lần đầu để lấy hostname frontend thật, đặt `VITE_API_BASE_URL=https://placeholder.invalid/api`.
+   - Bước 2: Sau khi Backend Render Web Service deploy xong và có hostname thật, cập nhật `VITE_API_BASE_URL=https://<backend-host>.onrender.com/api` và trigger redeploy frontend.
+5. **Cấu hình Infrastructure as Code (`render.yaml`)**:
+   - File `render.yaml` trong thư mục `frontend/` đã chuẩn hóa `type: web`, `runtime: static`, monorepo `rootDir`, routes, headers và envVars.
+   - Khi tạo Blueprint, chọn Blueprint Path `IdeaProjects/device/device/frontend/render.yaml` vì file không nằm ở Git repository root.
+   - `autoDeployTrigger: off` tránh deploy trước khi CI đạt; workflow chỉ bật deploy demo sau khi người dùng cấu hình environment `demo` và biến `DEMO_DEPLOY_ENABLED=true`.
+
 ## Nguồn yêu cầu
 
 - Kiến trúc và quy tắc chung: `../PROJECT.md` và `../AGENTS.md`.
+- Runbook triển khai demo: `../docs/runbooks/free-demo-deployment.md`.
 - API contract của feature đang hoạt động: `../specs/<feature>/spec.md`.
 - Bằng chứng lint/build/E2E: `../specs/<feature>/verification.md`.
 

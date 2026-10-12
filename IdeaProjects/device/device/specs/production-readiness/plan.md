@@ -169,8 +169,12 @@ Prometheus/Grafana <--- health and metrics
 - Thêm migration bảng công việc email bằng thay đổi cộng thêm.
 - Ghi công việc email cùng transaction với nghiệp vụ liên quan.
 - Worker claim theo batch, timeout/retry có giới hạn, chống gửi trùng và lưu lỗi đã lọc dữ liệu nhạy cảm.
-- Chuyển password reset, reminder, overdue và daily report sang luồng mới theo từng bước.
+- Chuyển password reset, reminder, overdue, daily report và extension notification sang luồng mới theo từng bước.
 - Rate limit login/password reset bằng storage dùng chung phù hợp với kiểu deploy đã duyệt; không dùng map trong bộ nhớ làm giải pháp production.
+- Quyết định PRD-407: dùng chính MySQL hiện có làm shared storage, fixed window với
+  atomic upsert và bucket key SHA-256. Cách này không thêm Redis/hạ tầng mới trong
+  giai đoạn hiện tại; đổi lại mỗi request login/reset phát sinh hai increment database.
+  Ngưỡng mặc định và window nằm trong cấu hình, bucket hết hạn được cleanup theo batch.
 
 ### Antigravity thực hiện
 
@@ -209,12 +213,33 @@ Prometheus/Grafana <--- health and metrics
 
 ## Giai đoạn 6: Deploy demo, backup/restore và rollback
 
+Phương án cập nhật ngày 2026-10-12: demo CV ngân sách 0đ, Render Free Web Service +
+Aiven MySQL Free + Render Static Site; email demo dùng Resend HTTPS API vì Render
+Free chặn SMTP 25/465/587. Koyeb bị loại sau khi nguồn chính thức xác nhận người dùng
+mới phải dùng gói trả phí. Codex chuẩn bị `docker/Dockerfile.demo`, entrypoint
+CA/truststore runtime và profile `demo` cho 512 MiB. Local/dev/test vẫn dùng
+SMTP/Mailpit; chỉ profile demo dùng Resend và recipient allow-list.
+Origin frontend được allow-list bằng CORS; frontend dùng backend URL tuyệt đối.
+Kiểm chứng bằng image riêng với MySQL TLS cô lập, không đổi stack Compose hiện có.
+Antigravity nhận PRD-603 sau khi contract/config backend sẵn sàng; Render resource
+creation và duyệt migration vẫn thuộc PRD-601/606 của người dùng.
+
 ### Codex thực hiện
 
 - Chuẩn bị artifact/container, health check, quy trình deploy và kiểm tra sau deploy.
 - Viết script/runbook backup/restore an toàn cho test/demo; không tự chạy thao tác phá hủy production.
 - Viết rollback code/config và chiến lược migration tiến về trước khi schema đã áp dụng.
 - Chuẩn bị CI/CD sau khi người dùng chọn provider.
+- CI chỉ deploy ref `main` (push hoặc manual có xác nhận) sau `safe`, `integration` và `compose-smoke`; một biến
+  enable có chủ đích chặn deploy trước khi Render resources/secret sẵn sàng. Deploy
+  hook chọn đúng commit, Render API xác nhận deploy mới `live`, sau đó smoke chỉ đọc
+  kiểm tra readiness, frontend bundle/routing/header, auth boundary và CORS.
+- Backup dùng logical dump TLS `VERIFY_IDENTITY`, option file và output nằm ngoài Git,
+  checksum cùng guard chống ghi đè. Restore chỉ nhận database rỗng có tên
+  `device_demo_restore_*`; không có đường restore trực tiếp vào `device_demo`.
+- Rollback dùng cặp deploy artifact đã biết tốt, tắt auto-deploy/worker khi cần và
+  giữ Flyway forward-only; restore dữ liệu là quy trình riêng, luôn diễn tập trên
+  database cô lập trước mọi quyết định cutover.
 
 ### Antigravity thực hiện
 

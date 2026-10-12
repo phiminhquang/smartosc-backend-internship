@@ -44,9 +44,9 @@
 
 ## 4. Follow-up bảo mật trước production
 
-- [ ] PR-207 Chọn và triển khai rate limit không phụ thuộc vào việc email tồn tại.
-- [ ] PR-208 Tách gửi email khỏi transaction/request path bằng async event hoặc outbox có retry.
-- [ ] PR-209 Kiểm tra timing của email tồn tại/không tồn tại sau khi hoàn tất PR-207/208.
+- [x] PR-207 Dùng MySQL shared fixed-window rate limit theo IP và identity trước account lookup; bucket key được SHA-256, vượt ngưỡng trả HTTP 429/code 1057 cùng `Retry-After`. PRD-407 và MySQL concurrency test đã hoàn tất ngày 2026-10-11.
+- [x] PR-208 Tách gửi email khỏi transaction/request path bằng transactional outbox có retry. PRD-405 đã enqueue token/job nguyên tử, mã hóa raw token bằng AES-256-GCM và không gửi job đã hết hạn.
+- [x] PR-209 Benchmark 50 cặp trên MySQL Testcontainers phát hiện baseline lệch median 37,722 ms; sau khi thêm response window 150 ms + jitter 0-25 ms, median chỉ lệch 5,210 ms, tỷ lệ 1,031 và dominance 0,560. Báo cáo ngày 2026-10-11 nằm trong `docs/benchmarks/`.
 
 ## 5. Kiểm chứng tự động
 
@@ -72,7 +72,7 @@
 
 ## 7. Hoàn tất
 
-- [x] PR-501 Review diff bảo mật và migration. Review lại ngày 2026-10-08 xác nhận token chỉ lưu hash, endpoint public đúng phạm vi, JWT có `tokenVersion`, V2 áp dụng thành công trên MySQL cô lập và không có secret production trong cấu hình mới; PR-207/208/209 vẫn là blocker phát hành.
+- [x] PR-501 Review diff bảo mật và migration. Review mới nhất ngày 2026-10-11 xác nhận reset token chỉ lưu hash, rate-limit bucket không lưu email/IP rõ, endpoint public đúng phạm vi, JWT có `tokenVersion`, Flyway V1-V7 áp dụng trên MySQL cô lập và không có secret production trong cấu hình mới; PR-207/208/209 đều đã đóng.
 - [x] PR-502 Cập nhật `verification.md` bằng kết quả thật.
 - [x] PR-503 Cập nhật `AI-HANDOFF.md`.
 - [x] PR-504 Đã tạo branch/commit và PR #1; ba job GitHub CI đạt trên commit `5837be2`.

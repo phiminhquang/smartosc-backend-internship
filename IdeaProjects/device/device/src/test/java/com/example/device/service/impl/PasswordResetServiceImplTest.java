@@ -7,7 +7,7 @@ import com.example.device.model.PasswordResetToken;
 import com.example.device.model.User;
 import com.example.device.repository.PasswordResetTokenRepository;
 import com.example.device.repository.UserRepository;
-import com.example.device.service.EmailService;
+import com.example.device.service.PasswordResetEmailJobService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,7 +19,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -42,7 +41,7 @@ class PasswordResetServiceImplTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    private EmailService emailService;
+    private PasswordResetEmailJobService passwordResetEmailJobService;
 
     @Mock
     private Clock clock;
@@ -55,17 +54,16 @@ class PasswordResetServiceImplTest {
                 userRepository,
                 tokenRepository,
                 passwordEncoder,
-                emailService,
+                passwordResetEmailJobService,
                 clock
         );
-        ReflectionTestUtils.setField(service, "resetBaseUrl", "http://localhost:5173/reset-password");
         ReflectionTestUtils.setField(service, "expirationMinutes", 15L);
         ReflectionTestUtils.setField(service, "cooldownSeconds", 60L);
         lenient().when(clock.instant()).thenReturn(NOW);
     }
 
     @Test
-    void requestReset_existingUser_shouldStoreOnlyHashAndEmailRawToken() {
+    void requestReset_existingUser_shouldStoreOnlyHashAndEnqueueEncryptedSecretInput() {
         User user = user();
         when(userRepository.findByEmailForUpdate(user.getEmail())).thenReturn(Optional.of(user));
         when(tokenRepository.existsByUser_IdAndCreatedAtAfter(eq(user.getId()), any()))
@@ -86,17 +84,14 @@ class PasswordResetServiceImplTest {
         assertEquals(NOW, storedToken.getCreatedAt());
         assertEquals(NOW.plusSeconds(15 * 60), storedToken.getExpiresAt());
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<Map<String, Object>> variablesCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(emailService).sendHtmlEmail(
-                eq(user.getEmail()),
-                anyString(),
-                eq("email/password-reset"),
-                variablesCaptor.capture()
+        ArgumentCaptor<String> rawTokenCaptor = ArgumentCaptor.forClass(String.class);
+        verify(passwordResetEmailJobService).enqueue(
+                eq(user),
+                eq(storedToken),
+                rawTokenCaptor.capture(),
+                eq(15L)
         );
-
-        String resetLink = (String) variablesCaptor.getValue().get("resetLink");
-        String rawToken = resetLink.substring(resetLink.indexOf("token=") + "token=".length());
+        String rawToken = rawTokenCaptor.getValue();
         assertFalse(rawToken.isBlank());
         assertNotEquals(rawToken, storedToken.getTokenHash());
     }
@@ -107,7 +102,7 @@ class PasswordResetServiceImplTest {
 
         service.requestReset("unknown@example.com");
 
-        verifyNoInteractions(tokenRepository, emailService);
+        verifyNoInteractions(tokenRepository, passwordResetEmailJobService);
     }
 
     @Test
@@ -120,7 +115,7 @@ class PasswordResetServiceImplTest {
         service.requestReset(user.getEmail());
 
         verify(tokenRepository, never()).save(any());
-        verifyNoInteractions(emailService);
+        verifyNoInteractions(passwordResetEmailJobService);
     }
 
     @Test

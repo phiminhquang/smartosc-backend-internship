@@ -17,6 +17,10 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
     boolean existsByUser_IdAndCreatedAtAfter(UUID userId, Instant threshold);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select t from PasswordResetToken t where t.id = :id")
+    Optional<PasswordResetToken> findByIdForUpdate(@Param("id") UUID id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select t from PasswordResetToken t join fetch t.user where t.tokenHash = :tokenHash")
     Optional<PasswordResetToken> findByTokenHashForUpdate(@Param("tokenHash") String tokenHash);
 

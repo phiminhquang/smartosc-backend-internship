@@ -3,9 +3,9 @@
 ## Trạng thái tổng thể
 
 - Spec: Approved ngày 2026-10-08.
-- Implementation: Giai đoạn 0/1/2 đã hoàn tất; backend Giai đoạn 3 từ PRD-301 đến PRD-304 và phần integration PRD-307 đã hoàn tất. PRD-305 đóng N/A sau review frontend; Giai đoạn 3 chỉ còn demo PRD-306 của người dùng.
-- Verification: Cổng `safe`, MySQL integration Flyway V1-V3, benchmark 100k do người dùng xác nhận, bốn race scenario backend, frontend static tests/build, local Compose bốn service, Playwright Chromium E2E và GitHub CI đến PR #6 đều đạt.
-- Feature password reset vẫn là công việc đang Verifying và là dependency của Giai đoạn 1/4.
+- Implementation: Giai đoạn 0/1/2/3/4/5 và phần chuẩn bị source/local của PRD-602/603/604/605 đã hoàn tất. Phương án demo CV 0đ hiện tại là Render Free Web Service + Aiven MySQL Free + Render Static Site + Resend HTTPS API. Aiven đang Running với database riêng `device_demo`; tài khoản Render đã có nhưng chưa tạo service. Người dùng đã xác nhận email onboarding Resend tới đúng một email; PRD-601/606 còn resource, secret, migration và deploy cloud; PRD-607/608 còn restore/browser/email drill thật.
+- Verification: Cổng `safe` mới nhất có 45 backend test và logging guard; full MySQL integration 99/99 với Flyway V1-V8; image demo 512 MiB/0,1 CPU đã qua TLS/Resend config/readiness/login/devices/CORS/security smoke; correlation UI → log, health, metrics, dashboard 8 panel và security boundary management endpoint đã đạt local; benchmark timing 50 cặp, benchmark 100k do người dùng xác nhận, bốn race scenario backend, rate-limit concurrency 20 transaction, Playwright Chromium E2E, SMTP failure/recovery không gửi trùng và GitHub CI đến PR #6 đều đạt.
+- Feature password reset vẫn ở trạng thái Verifying vì các integration case PR-405/406/407 riêng còn mở; các dependency PR-207/208/209 của Giai đoạn 4 đã hoàn tất.
 
 ## Ký hiệu owner và cách làm
 
@@ -87,7 +87,7 @@
 - [x] PRD-303 `[Owner: Codex] [AI thực hiện]` Luồng assign dùng pessimistic write lock đã có ở repository; các luồng còn lại giữ lock hiện hữu. Không thêm constraint/migration vì test dữ liệu không phát hiện invariant bị phá vỡ.
 - [x] PRD-304 `[Owner: Codex] [AI thực hiện]` Conflict contract chốt HTTP `409`: codes `1022`, `1029`, `1035`, `1046`; optimistic conflict chung tiếp tục code `1053`. Integration test kiểm tra HTTP và code.
 - [x] PRD-305 `[Owner: Antigravity] [AI thực hiện]` Đóng N/A: frontend hiện không có màn hình hoặc API call cho assignment, return, extension và repair; các form hiện có đã disable submit trong lúc request đang chạy nên không cần sửa `frontend/`.
-- [ ] PRD-306 `[Owner: User] [AI hướng dẫn]` Chạy demo hai request đồng thời và kiểm tra trạng thái database.
+- [x] PRD-306 `[Owner: User] [AI hướng dẫn]` Người dùng chạy `bash scripts/verify.sh integration` ngày 2026-10-10; 46/46 test đạt trong 1 phút 53 giây. Bộ test gồm bốn race scenario gửi hai request đồng thời và assertions đọc lại database.
 - [x] PRD-307 `[Owner: Integration]` Focused concurrency suite và full integration đều đạt; assertions đọc lại database xác nhận assignment/state/deadline/final repair state nhất quán.
 
 ### Gate G3
@@ -98,48 +98,48 @@
 
 ## Giai đoạn 4 — Email nền và rate limit
 
-- [ ] PRD-401 `[Owner: Codex] [AI thực hiện]` Viết ADR email job/outbox, retry, idempotency và xử lý reset token.
-- [ ] PRD-402 `[Owner: User] [AI hướng dẫn]` Duyệt ADR và giới hạn retry/retention trước migration.
-- [ ] PRD-403 `[Owner: Codex] [AI thực hiện]` Thêm migration bảng job và repository claim an toàn theo batch.
-- [ ] PRD-404 `[Owner: Codex] [AI thực hiện]` Implement worker, retry có giới hạn, failure state và chống gửi trùng.
-- [ ] PRD-405 `[Owner: Codex] [AI thực hiện]` Chuyển password reset sang job nền mà không tạo account/timing leak.
-- [ ] PRD-406 `[Owner: Codex] [AI thực hiện]` Chuyển reminder, overdue và daily report theo từng bước có test.
-- [ ] PRD-407 `[Owner: Codex] [AI thực hiện]` Implement rate limit login/reset với shared storage được duyệt.
-- [ ] PRD-408 `[Owner: Antigravity] [AI thực hiện]` Cập nhật UX response nhận yêu cầu nếu contract đổi. Phụ thuộc: PRD-405.
-- [ ] PRD-409 `[Owner: User] [AI hướng dẫn]` Tắt/bật SMTP test, quan sát retry và xác nhận không gửi trùng.
-- [ ] PRD-410 `[Owner: Integration]` Hoàn tất bằng chứng password-reset PR-207/208/209 và cập nhật hai bộ verification.
+- [x] PRD-401 `[Owner: Codex] [AI thực hiện]` ADR-002 mô tả transactional outbox, claim/lease, retry, idempotency, giới hạn exactly-once của SMTP và mã hóa reset token; đã Accepted qua PRD-402.
+- [x] PRD-402 `[Owner: User] [AI hướng dẫn]` Người dùng duyệt ADR-002 ngày 2026-10-10, gồm batch 20, lease 60 giây, retry, retention 30/90 ngày, SMTP delivery semantics và quản lý encryption key.
+- [x] PRD-403 `[Owner: Codex] [AI thực hiện]` Flyway V4 tạo `email_jobs`; entity/repository và claim service dùng batch, lease, `FOR UPDATE SKIP LOCKED`, status/version guard. MySQL integration test xác nhận hai worker không claim trùng và lượt sau lấy job bị skip.
+- [x] PRD-404 `[Owner: Codex] [AI thực hiện]` Worker claim batch rồi gửi song song ngoài transaction; retry/backoff có jitter và giới hạn, `SENT`/`DEAD`/`UNKNOWN`, stable Message-ID, redacted error, cleanup 30/90 ngày và feature flag đã có test MySQL failure/crash/chống gửi lại.
+- [x] PRD-405 `[Owner: Codex] [AI thực hiện]` Password reset ghi token hash và job trong cùng transaction; raw token chỉ tồn tại dưới AES-256-GCM ciphertext trong outbox, worker giải mã trong bộ nhớ, giữ response HTTP 202 trung lập và vô hiệu hóa token khi job `DEAD`/`EXPIRED`.
+- [x] PRD-406 `[Owner: Codex] [AI thực hiện]` Reminder, overdue, daily report và hai extension notification đã enqueue snapshot/idempotency key trong transaction; Flyway V6 liên kết assignment job, worker chỉ cập nhật marker sau `SENT` và bỏ qua reminder/overdue đã lỗi thời.
+- [x] PRD-407 `[Owner: Codex] [AI thực hiện]` Flyway V7 tạo shared fixed-window bucket trong MySQL; login/reset kiểm tra IP và normalized identity, chỉ lưu SHA-256 key, atomic upsert an toàn đồng thời, trả 429/code 1057 + `Retry-After` và cleanup bucket hết hạn.
+- [x] PRD-408 `[Owner: Antigravity] [AI thực hiện]` Đóng N/A: frontend hiện có đã chặn double-submit và hiển thị `message` từ mọi Axios error, bao gồm 429 mới; response HTTP 202 trung lập không đổi và không cần sửa `frontend/`.
+- [x] PRD-409 `[Owner: User] [AI hướng dẫn]` Người dùng tắt/bật Mailpit ngày 2026-10-11: job được giữ ở `RETRY_WAIT`, sau recovery chuyển `SENT` ở lần thử thứ 3; database chỉ có một job và người dùng xác nhận Mailpit chỉ có một email.
+- [x] PRD-410 `[Owner: Integration]` PR-207/208/209 đã đủ bằng chứng. Benchmark timing phát hiện baseline không đạt, sau timing guard đạt với median lệch 5,210 ms; hai verification, report và handoff đã được cập nhật, integration 83/83 và safe đạt.
 
 ### Gate G4
 
-- [ ] G4-1 SMTP lỗi không làm mất job hoặc giữ lock nghiệp vụ trong lúc gọi mạng.
-- [ ] G4-2 Job retry và hoàn tất đúng một lần theo contract.
-- [ ] G4-3 Rate limit không phụ thuộc email có tồn tại.
+- [x] G4-1 SMTP lỗi không làm mất job hoặc giữ lock nghiệp vụ trong lúc gọi mạng; Compose drill xác nhận request tạo job, worker retry ngoài transaction nghiệp vụ và job tồn tại qua lúc Mailpit dừng.
+- [x] G4-2 Job retry và hoàn tất đúng một lần theo contract; một job chuyển `RETRY_WAIT` sang `SENT` và Mailpit nhận đúng một email. SMTP thuần vẫn không được tuyên bố exactly-once tuyệt đối.
+- [x] G4-3 Rate limit chạy trước account lookup, cùng policy cho email tồn tại/không tồn tại; unit/web/MySQL concurrency test đạt.
 
 ## Giai đoạn 5 — Log, health, metrics và chẩn đoán
 
-- [ ] PRD-501 `[Owner: Codex] [AI thực hiện]` Thay `System.out`, thêm structured logging và redaction.
-- [ ] PRD-502 `[Owner: Codex] [AI thực hiện]` Thêm request/job ID xuyên suốt response-log-job.
-- [ ] PRD-503 `[Owner: Codex] [AI thực hiện]` Thêm Actuator/health và bảo vệ management endpoints.
-- [ ] PRD-504 `[Owner: Codex] [AI thực hiện]` Thêm metrics request, datasource, scheduler và email jobs.
-- [ ] PRD-505 `[Owner: Codex] [AI thực hiện]` Thêm Compose profile Prometheus/Grafana và dashboard cơ sở.
-- [ ] PRD-506 `[Owner: Antigravity] [AI thực hiện]` Hiển thị support/request ID cho lỗi không xác định. Phụ thuộc: PRD-502.
-- [ ] PRD-507 `[Owner: Codex] [AI thực hiện]` Viết runbook tìm API chậm, DB connection exhaustion, scheduler/email job kẹt.
-- [ ] PRD-508 `[Owner: User] [AI hướng dẫn]` Tạo lỗi test, tìm log bằng ID và lưu ảnh dashboard.
-- [ ] PRD-509 `[Owner: Integration]` Security review log/metrics/endpoints và ghi verification.
+- [x] PRD-501 `[Owner: Codex] [AI thực hiện]` Source audit xác nhận production Java không còn `System.out`; API exception, email worker và scheduler dùng log `event` + key/value theo allow-list. Test redaction và guard trong `verify.sh safe` ngăn exception message, recipient, payload, mật khẩu, JWT và reset token lọt vào log.
+- [x] PRD-502 `[Owner: Codex] [AI thực hiện]` `X-Request-ID` được validate/sinh UUID, trả ở mọi response, thêm vào error body/log và lưu qua Flyway V8 trong email job để worker log cùng `request_id`/`job_id`. Full integration 87/87 xác nhận migration/index và password-reset request → job → worker correlation.
+- [x] PRD-503 `[Owner: Codex] [AI thực hiện]` Thêm Actuator với health/liveness/readiness công khai nhưng không lộ detail; chỉ expose health, management endpoint khác cần xác thực. Compose dùng readiness thay OpenAPI; integration và runtime Compose đều đạt.
+- [x] PRD-504 `[Owner: Codex] [AI thực hiện]` Actuator/Micrometer cung cấp request, JDBC/Hikari và JVM metrics; scheduler timer cùng email queue/batch/delivery/recovery/cleanup metrics dùng tag hữu hạn, có Prometheus registry nhưng chưa expose scrape endpoint trước PRD-505.
+- [x] PRD-505 `[Owner: Codex] [AI thực hiện]` Compose profile monitoring chạy Prometheus/Grafana local; scrape qua management port nội bộ 8081, dashboard 8 panel được provision, cổng API 8080 không phục vụ Actuator ẩn danh và runtime target đạt `up`.
+- [x] PRD-506 `[Owner: Antigravity] [AI thực hiện]` Frontend ưu tiên `requestId` trong error body, fallback `X-Request-ID`, thêm “Mã tham chiếu” vào error message và ghi nhận response ID; static contract test, lint và build đạt. Codex chỉ review/tích hợp tài liệu, không sửa `frontend/`.
+- [x] PRD-507 `[Owner: Codex] [AI thực hiện]` Runbook chẩn đoán API chậm, DB connection exhaustion và scheduler/email job kẹt đã có PromQL, log correlation, truy vấn metadata không đọc secret và guard chống thao tác phá dữ liệu; các query được chạy thử trên local stack.
+- [x] PRD-508 `[Owner: User] [AI hướng dẫn]` Người dùng tạo lỗi đăng nhập test, thấy “Mã tham chiếu”, dùng cùng request ID tìm đúng log 401 và xác nhận đã lưu ảnh dashboard không chứa secret.
+- [x] PRD-509 `[Owner: Integration]` Security review source/test/runtime đạt: log và metric không mang dữ liệu nhạy cảm/cardinality cao; management 8081 không publish, API 8080 chặn Actuator, nội bộ chỉ health/Prometheus được phép.
 
 ### Gate G5
 
-- [ ] G5-1 Từ lỗi UI/API tìm được log/metric liên quan.
-- [ ] G5-2 Dashboard phản ánh health/latency/error/DB/job cơ bản.
-- [ ] G5-3 Không lộ secret/token và management endpoint không public trái phép.
+- [x] G5-1 Từ lỗi UI/API tìm được log/metric liên quan; PRD-508 xác nhận UI support ID khớp hai backend log event.
+- [x] G5-2 Dashboard phản ánh health/latency/error/DB/job cơ bản trên local Compose; ảnh bằng chứng do người dùng lưu ở PRD-508.
+- [x] G5-3 Không lộ secret/token và management endpoint không public trái phép trong cấu hình/runtime local; môi trường demo phải kiểm tra lại sau deploy.
 
 ## Giai đoạn 6 — Deploy demo, backup/restore và rollback
 
-- [ ] PRD-601 `[Owner: User] [AI hướng dẫn]` Chọn provider/ngân sách và tạo tài khoản/demo resources; không ghi secret vào chat/repository.
-- [ ] PRD-602 `[Owner: Codex] [AI thực hiện]` Chuẩn bị backend/container/deployment config theo provider đã chọn.
-- [ ] PRD-603 `[Owner: Antigravity] [AI thực hiện]` Chuẩn bị frontend production deploy/routing/backend URL. Phụ thuộc: PRD-601.
-- [ ] PRD-604 `[Owner: Codex] [AI thực hiện]` Viết CI/CD, post-deploy health check và rollback runbook.
-- [ ] PRD-605 `[Owner: Codex] [AI thực hiện]` Viết backup/restore runbook/script có guard cho test/demo.
+- [ ] PRD-601 `[Owner: User] [AI hướng dẫn]` Đã chốt ngân sách 0đ và chuyển sang Render Free Web Service + Aiven MySQL Free + Render Static Site + Resend HTTPS API ngày 2026-10-12; Koyeb mới và SMTP trên Render Free không còn nằm trong phương án. Aiven MySQL 8.4.8 đang Running với database riêng `device_demo`, các database cũ giữ nguyên. Render Dashboard đã có nhưng chưa tạo service. Người dùng đã nhận email onboarding Resend tại đúng một địa chỉ; ứng dụng demo sẽ chỉ cho phép địa chỉ này. Còn tạo resource, nhập CA/secret, duyệt migration và deploy/kiểm tra email từ ứng dụng; không gửi secret qua chat/repository. Checklist tại `docs/runbooks/free-demo-deployment.md`.
+- [x] PRD-602 `[Owner: Codex] [AI thực hiện]` Image/profile demo riêng, MySQL VERIFY_IDENTITY, CORS origin chính xác và transport Resend HTTPS có recipient allow-list/idempotency đã có; local/dev vẫn dùng SMTP. Safe 45/45, full integration 99/99. Image `3b3fbf302cc0` smoke 512 MiB/0,1 CPU đạt TLS/Resend config/Flyway/readiness/login/devices/CORS/security, readiness 425 giây và mẫu RAM 268,3 MiB; chưa deploy cloud, gọi Resend thật từ ứng dụng hoặc chạy migration Aiven.
+- [x] PRD-603 `[Owner: Antigravity] [AI thực hiện]` Đã chuẩn bị Render Static Site build/publish, SPA rewrite, security headers, monorepo root, build-time `VITE_API_BASE_URL` và quy trình placeholder → frontend origin → backend URL. Codex review tích hợp đã sửa Blueprint theo schema Render thành `type: web` + `runtime: static`; `bash scripts/verify.sh frontend` đạt 3/3 test, Oxlint và Vite build 92 module. Service URL/secret/deploy thật vẫn thuộc PRD-601/606.
+- [x] PRD-604 `[Owner: Codex] [AI thực hiện]` GitHub deploy job chỉ chạy ref `main` sau `safe`/`integration`/`compose-smoke` và biến enable, từ push hoặc manual có xác nhận; deploy hook chọn đúng SHA, Render API chờ `live`, post-deploy script kiểm tra readiness/frontend/auth/management/CORS. Rollback runbook giữ Flyway forward-only và có bước tắt auto-deploy/worker. Local guard, YAML parse, mock HTTP end-to-end và cổng `safe` đạt; chưa gọi Render thật.
+- [x] PRD-605 `[Owner: Codex] [AI thực hiện]` Backup/restore helper dùng MySQL option file ngoài Git, TLS `VERIFY_IDENTITY`, logical dump + checksum, từ chối ghi đè và chỉ restore vào database rỗng `device_demo_restore_*`; runbook cấm restore trực tiếp `device_demo`. Shell/guard test đạt; restore thật vẫn thuộc PRD-607.
 - [ ] PRD-606 `[Owner: User] [AI hướng dẫn]` Nhập secret vào provider, duyệt migration và deploy demo.
 - [ ] PRD-607 `[Owner: User] [AI hướng dẫn]` Thực hành backup và restore vào database cô lập; kiểm tra bản ghi và login.
 - [ ] PRD-608 `[Owner: User] [AI hướng dẫn]` Kiểm tra demo bằng trình duyệt và email test/demo.
@@ -164,10 +164,11 @@
 
 - PRD-003, PRD-103, PRD-107 và phần tích hợp CI PRD-109 đã được kiểm tra; Playwright Chromium E2E local đã đạt.
 - Docker Engine/Compose và quyền user đã hoạt động; blocker Docker được gỡ. Full stack đạt bốn service healthy trong lần kiểm tra PRD-110.
-- Password reset đã có MySQL Testcontainers, full Compose, Playwright E2E, kiểm tra trình duyệt thủ công và GitHub CI xanh; JWT cũ trên Compose và PR-207/208/209 vẫn còn mở.
+- Password reset đã có MySQL Testcontainers, full Compose, Playwright E2E, kiểm tra trình duyệt thủ công và GitHub CI xanh; PR-207/208/209 đều đã đóng.
 - Giai đoạn 2 đã đóng: PRD-210 được người dùng xác nhận; PR #5 đã merge vào `main` tại `681ab42` với sáu check xanh.
-- PRD-305 đã đóng N/A sau review frontend; Giai đoạn 3 chỉ còn PRD-306 do người dùng chạy demo.
-- Chưa chọn provider demo; blocker này chỉ áp dụng Giai đoạn 6, không chặn local/test.
+- PRD-305 đã đóng N/A sau review frontend; người dùng đã xác nhận PRD-306 và Giai đoạn 3 hoàn tất.
+- Giai đoạn 4 và 5 cùng chuẩn bị backend/frontend/deploy/backup PRD-602 đến PRD-605 đã hoàn tất; ngày 2026-10-12 người dùng chọn demo CV miễn phí. Chưa được tuyên bố production-ready trước kiểm tra deploy/restore/rollback thật.
+- Aiven Free và database rỗng riêng `device_demo` đã sẵn sàng; email onboarding Resend đã đến đúng một địa chỉ. Chưa tạo Render Web/Static services, nhập secret, duyệt cloud migration, restore backup cô lập hoặc xác minh email do ứng dụng cloud tạo. Các phần còn lại chặn PRD-606/607/608 và Gate G6.
 
 ## Quy tắc cập nhật
 

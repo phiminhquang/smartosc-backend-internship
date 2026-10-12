@@ -1,0 +1,10 @@
+package com.example.device.enums;
+
+public enum EmailJobType {
+    PASSWORD_RESET,
+    ASSIGNMENT_REMINDER,
+    ASSIGNMENT_OVERDUE,
+    DAILY_OVERDUE_REPORT,
+    EXTENSION_REQUESTED,
+    EXTENSION_REVIEWED
+}

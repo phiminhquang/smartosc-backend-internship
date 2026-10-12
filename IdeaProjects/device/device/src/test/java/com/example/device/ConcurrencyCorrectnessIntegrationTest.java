@@ -16,7 +16,7 @@ import com.example.device.repository.DeviceAssignmentRepository;
 import com.example.device.repository.DeviceRepairRepository;
 import com.example.device.repository.DeviceRepository;
 import com.example.device.repository.UserRepository;
-import com.example.device.service.EmailService;
+import com.example.device.service.EmailJobEnqueueService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,7 +77,7 @@ class ConcurrencyCorrectnessIntegrationTest {
     @Autowired
     private DeviceRepairRepository repairRepository;
     @MockitoBean
-    private EmailService emailService;
+    private EmailJobEnqueueService emailJobEnqueueService;
 
     @DynamicPropertySource
     static void testProperties(DynamicPropertyRegistry registry) {
