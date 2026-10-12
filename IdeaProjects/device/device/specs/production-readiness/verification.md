@@ -641,6 +641,10 @@ Lỗi hoặc giới hạn còn lại:
 - Trước lượt commit tích hợp, `bash scripts/verify.sh integration` được chạy lại bằng
   Docker/Testcontainers: 99/99 test đạt, 0 failure/error/skipped, MySQL 8.4.11 áp dụng
   thành công Flyway V1-V8; Maven `BUILD SUCCESS` trong 4 phút 06 giây.
+- Commit `3f81ff6` được push lên `feature/frontend-prd603` và mở PR #8. GitHub Device
+  CI push run `38219844010` cùng pull-request run `38219933811` đều đạt `safe`,
+  `integration` và `compose-smoke`; `deploy-demo` skip đúng điều kiện vì ref chưa phải
+  `main`. PR ở trạng thái mergeable trước lượt cập nhật bằng chứng này.
 - MySQL client không có trên máy hiện tại và không có cloud mutation trong PRD-605,
   nên logical dump/restore thật chưa chạy. PRD-604/605 đóng cho implementation/local
   guard; PRD-606/607/608/609 và cả ba Gate G6 tiếp tục mở.
