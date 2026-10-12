@@ -2,12 +2,12 @@
 
 ## Mục tiêu hiện tại
 
-- Backend Giai đoạn 3 production-readiness đã hoàn tất và merge; PRD-305 đã đóng N/A, chỉ còn người dùng demo PRD-306.
-- Không tạo màn hình assignment/return/extension/repair ngoài phạm vi chỉ để xử lý PRD-305.
+- Giai đoạn 3, 4 và 5 đã hoàn tất; Gate G5 đạt local. Phương án demo CV 0đ hiện tại là Render Free Web Service + Aiven MySQL Free + Render Static Site + Resend HTTPS API; Koyeb/SMTP cloud đã bị loại khỏi phương án. PRD-602 đến PRD-605 đã hoàn tất phần chuẩn bị source/local verification gồm backend, frontend, CI/CD, rollback và backup/restore guard. Aiven MySQL 8.4.8 đang Running với database riêng `device_demo`, Render Dashboard đã có nhưng chưa tạo service, và người dùng đã nhận email onboarding Resend tại đúng một địa chỉ. PRD-601/606 còn resource/secret/migration/deploy cloud; PRD-607/608 còn restore/browser/email drill thật.
+  - Worker mặc định tắt qua `EMAIL_JOB_WORKER_ENABLED=false` nhưng profile local/dev bật. Không còn producer gọi SMTP trực tiếp trong transaction nghiệp vụ; rate-limit counter dùng MySQL chung giữa các instance.
 
 ## Trạng thái hiện tại
 
-- Backend, migration, email template và frontend hiện có đã được triển khai; nhánh hiện tại không sửa `frontend/`.
+- Backend, migration và email template hiện có đã được triển khai. Thay đổi PRD-506/603 trong frontend do Antigravity thực hiện; Codex review/tích hợp và sửa riêng schema Blueprint PRD-603 từ `type: static` sang `type: web` + `runtime: static` theo tài liệu Render chính thức.
 - PRD-209 đã merge qua PR #5 vào `main` tại `681ab42`; sáu check push/PR đều xanh. Người dùng đã xác nhận PRD-210 bằng benchmark 1k/10k/100k thành công trong 8 phút 39 giây, không OOM.
 - PRD-301 đến PRD-304 và PRD-307 đã merge qua PR #6 vào `main` tại `bf2add0`; commit implementation là `c66ab22`.
 - `ConcurrencyCorrectnessIntegrationTest` bao phủ assign, return, extension approve/reject và repair complete/unrepairable. Mỗi race có đúng một HTTP 200 và một HTTP 409, sau đó đọc lại database xác nhận trạng thái nhất quán.
@@ -15,8 +15,29 @@
 - PR #6 có đủ sáu check push/PR xanh. Post-merge Device CI run `38040530264` trên `main` cũng đạt `safe` 47 giây, `integration` 1 phút 18 giây và `compose-smoke` 2 phút 12 giây.
 - PR #3 đã merge PRD-206/207 vào `main` tại `9b9e4fd`; post-merge Device CI run `37910483706` đạt `safe` 35 giây, `integration` 1 phút 18 giây và `compose-smoke` 2 phút 34 giây.
 - Giai đoạn 2 đã hoàn tất. Review frontend xác nhận không có màn hình/API call cho assignment, return, extension hoặc repair; các form hiện có đã có double-submit guard, nên PRD-305 và G3-3 đóng N/A mà không sửa `frontend/`.
-- Giai đoạn 3 chỉ còn PRD-306 do người dùng demo hai request đồng thời và kiểm tra trạng thái database.
-- Chưa sẵn sàng public production vì Giai đoạn 3-7 và các follow-up bảo mật còn mở.
+- Người dùng chạy lại `bash scripts/verify.sh integration` cho PRD-306 ngày 2026-10-10: 46/46 test đạt, không failure/error/skip, `BUILD SUCCESS` trong 1 phút 53 giây. Full suite chứa bốn race scenario và assertions đọc lại MySQL Testcontainers.
+- Giai đoạn 3, 4 và 5 đã hoàn tất. Chưa sẵn sàng public production vì Giai đoạn 6-7 còn mở.
+- ADR-002 được người dùng Accepted ngày 2026-10-10 với batch 20, lease 60 giây, retry và retention 30/90 ngày. PRD-402 đã đóng.
+- PRD-403 thêm Flyway V4 `email_jobs`, entity/enums/repository và claim service dùng `FOR UPDATE SKIP LOCKED`. Focused test đạt 1/1; full integration đạt 47/47 trên MySQL 8.4.11/Flyway V1-V4 trong 3 phút 16 giây.
+- PRD-404 thêm worker gửi batch song song ngoài transaction, stable Message-ID, retry có jitter/giới hạn, terminal states, lease recovery sang `UNKNOWN`, redaction và cleanup 30/90 ngày. Focused integration đạt 7/7; full suite đạt 56/56 trong 3 phút 03 giây; cổng `safe` đạt.
+- PRD-405 thêm Flyway V5 và password reset producer nguyên tử, AES-256-GCM với key version/nonce, expiry/terminal token invalidation và worker dựng link chỉ trong bộ nhớ. `DeviceApplicationTests` đạt 4/4; full integration đạt 64/64 trên MySQL 8.4.11/Flyway V1-V5 trong 2 phút 42 giây; cổng `safe` đạt 20 backend test, 3 frontend test, lint/build.
+- PRD-406 thêm enqueue service chung và Flyway V6 cho assignment job; reminder/overdue marker chỉ được đặt sau `SENT`, retry giữ marker rỗng và job stale đi `EXPIRED`. Reminder, overdue, daily report và hai email extension đều dùng outbox; full integration đạt 74/74 trên MySQL 8.4.11/Flyway V1-V6 trong 3 phút 43 giây; cổng `safe` đạt. PRD-408 đóng N/A vì HTTP/UX contract không đổi và không sửa frontend.
+- PRD-407 thêm Flyway V7 `rate_limit_buckets`, fixed-window theo IP/identity cho login/reset, SHA-256 bucket key, atomic upsert, 429/code 1057 + `Retry-After` và cleanup. Full integration cuối đạt 80/80 trong 2 phút 54 giây trên MySQL 8.4.11/Flyway V1-V7; 20 transaction đồng thời không mất increment; cổng `safe` đạt 25 backend test cùng frontend lint/build. PR-207 và G4-3 đã đóng; frontend hiện có xử lý message 429 nên PRD-408 giữ N/A.
+- PRD-409 được người dùng xác nhận ngày 2026-10-11 trên full Compose: khi Mailpit dừng, job ở `RETRY_WAIT`; sau khi bật lại, cùng job chuyển `SENT` ở lần thử thứ 3. Database có đúng một job, Mailpit API và kiểm tra trực quan đều có đúng một email; log không thấy raw token/payload. G4-1/G4-2 đã đóng theo contract, không nâng thành cam kết SMTP exactly-once tuyệt đối.
+- PRD-410/PR-209 ban đầu phát hiện timing leak rõ: median existing/missing 86,052/48,330 ms. Sau `PasswordResetTimingGuard` mặc định 150 ms + jitter 0-25 ms, benchmark 50 cặp đạt 175,697/170,486 ms, lệch 5,210 ms, ratio 1,031, dominance 0,560. Full integration đạt 83/83; safe đạt 28 backend test cùng frontend lint/build. PR-207/208/209 và Giai đoạn 4 đã đóng.
+- PRD-501 xác nhận production Java không còn `System.out`/`System.err`/`printStackTrace`, chuẩn hóa API exception, email worker và scheduler thành log `event` + key/value theo allow-list. Hai redaction test xác nhận exception message, recipient, payload, mật khẩu, JWT và reset token không lọt log; `safe` đạt 30 backend test cùng frontend lint/build. Full integration chưa chạy lại vì Docker daemon không truy cập được; task này không đổi database.
+- PRD-502 thêm `X-Request-ID` validate/sinh UUID, response header, error-body `requestId`, request completion/error logs và Flyway V8 `email_jobs.request_id` + index. Enqueue/worker log cùng request/job ID; MySQL integration password reset xác nhận ID đi từ request context vào row rồi sang worker. Full integration cuối đạt 87/87 trên Flyway V1-V8; safe đạt 32 backend test cùng frontend lint/build.
+- Full integration PRD-502 lần đầu có 1 failure do scheduler thật chạy trong test và enqueue thêm reminder, không phải duplicate delivery. `app.scheduler.enabled` mặc định bật, profile test tắt để cô lập; lần chạy lại đạt toàn bộ.
+- PRD-503 thêm Actuator và chỉ expose health; health/liveness/readiness công khai trả trạng thái tối thiểu, readiness kiểm tra application state + database và không phụ thuộc SMTP async. Actuator index/Prometheus ẩn danh trả 401. Full integration đạt 88/88, safe đạt và backend Compose rebuild dùng readiness healthcheck đã healthy.
+- PRD-504 thêm request histogram, datasource/JVM binders và `OperationalMetrics` cho scheduler/email job với tag hữu hạn. Prometheus registry có sẵn nhưng endpoint chưa expose trước PRD-505. Safe đạt 33 backend test; full integration đạt 89/89 trên MySQL/Flyway V1-V8.
+- PRD-506 do Antigravity thực hiện trong `frontend/`: body `requestId` ưu tiên, fallback `X-Request-ID`, error message hiển thị “Mã tham chiếu”. Codex review diff và cổng frontend test/lint/build đạt, không sửa source frontend.
+- PRD-505 thêm Compose profile Prometheus/Grafana local. Backend management port 8081 chỉ nằm trong Compose network; Prometheus target `device-backend` đạt `up`, query email-job có đủ 7 status và Grafana provision dashboard 8 panel UID `device-operations`. API port 8080 trả 401 cho health/Prometheus khi monitoring bật; endpoint ngoài allow-list trên 8081 cũng trả 401. Safe đạt 33/33 backend test cùng frontend test/lint/build; focused `DeviceApplicationTests` đạt 6/6 trên MySQL/Flyway V1-V8.
+- PRD-507 thêm runbook `docs/runbooks/operations-troubleshooting.md` cho API chậm, DB pool cạn và scheduler/email job kẹt. PromQL và truy vấn MySQL metadata đã chạy thử trên local stack; runbook không đọc recipient/payload/secret/SQL text và cấm sửa trạng thái outbox thủ công.
+- PRD-508 do người dùng thực hiện: lỗi đăng nhập test hiển thị mã tham chiếu, cùng ID khớp log rejection/completion HTTP 401 và người dùng xác nhận đã lưu ảnh dashboard. PRD-509 review source/test/runtime đạt; host không truy cập 8081, API Actuator 401, nội bộ chỉ health/Prometheus 200 và info 401. Gate G5 đã đóng.
+- PRD-602 ngày 2026-10-12 đã đóng: thêm `docker/Dockerfile.demo`, entrypoint tạo CA/truststore runtime, profile demo Hikari 5/email thread-batch 2/Tomcat 16, CORS allow-list chính xác và transport Resend HTTPS. `EmailJobSenderImpl` tách render khỏi transport; SMTP vẫn là mặc định local/dev, còn demo dùng Resend với recipient allow-list, stable idempotency key, timeout và retry/permanent classification. Safe đạt 45/45, full MySQL integration 99/99 trên Flyway V1-V8. Image cuối `3b3fbf302cc0` smoke 512 MiB/0,1 CPU đạt TLS/Resend config/readiness/login/devices/CORS/security; readiness 425 giây, mẫu RAM 268,3 MiB, không OOM. Chưa deploy cloud, nhập secret, gọi Resend thật từ ứng dụng hoặc sửa frontend.
+- PRD-603 ngày 2026-10-12 đã đóng cho phần chuẩn bị frontend: Render Static Site build/publish, monorepo root, SPA rewrite, security headers, placeholder/backend URL workflow và hướng dẫn Blueprint Path đã có. `bash scripts/verify.sh frontend` đạt 3/3 test, Oxlint và Vite build 92 module. Chưa tạo Static Site hoặc kiểm tra trình duyệt trên cloud.
+- PRD-602 đến PRD-605 cùng các thay đổi production-readiness tích lũy đã được review và commit trên `feature/frontend-prd603` tại `7640718` (`feat(device): harden production readiness and demo deployment`). Trước commit, `safe` đạt 45/45 backend test và frontend gate; full integration chạy lại đạt 99/99 trên MySQL 8.4.11/Flyway V1-V8 trong 4 phút 06 giây; secret scan, workflow/render YAML, mock post-deploy và diff check đều đạt. Chưa push/PR vì phiên `gh` hiện có token không hợp lệ; chưa gọi Render/Aiven, tạo dump hoặc restore thật. PRD-606/607/608/609 và Gate G6 vẫn mở.
+- Backend/frontend/MySQL/Mailpit/Prometheus/Grafana đang chạy; backend và frontend healthy. Grafana/Prometheus chỉ bind loopback, 8081 không publish ra host. Đây là cấu hình local, không dùng anonymous Viewer cho Internet/demo.
 - Phân công mặc định và ranh giới chỉnh sửa tuân theo `AGENTS.md`; hiện không có ngoại lệ đang hoạt động.
 
 ## Nguồn sự thật cần đọc
@@ -26,6 +47,7 @@
 - Trạng thái công việc và blocker: `specs/production-readiness/tasks.md`.
 - Bằng chứng kiểm tra duy nhất: `specs/production-readiness/verification.md`.
 - Quyết định bảo mật lâu dài: `docs/decisions/001-password-reset-token-and-session-revocation.md`.
+- Quyết định email nền đã Accepted: `docs/decisions/002-durable-email-outbox.md`.
 - Quy tắc project và cổng kiểm tra: `AGENTS.md` và `scripts/verify.sh`.
 
 ## Phạm vi thay đổi PR #6
@@ -40,18 +62,24 @@
 - MySQL Testcontainers/Compose, frontend container, Mailpit và browser E2E đã đạt local và GitHub hosted runner sạch.
 - Playwright Chromium E2E điều khiển DOM thật và yêu cầu login thành công; PRD-107, các tiêu chí tự động Gate G1 và kiểm tra thủ công PRD-110 đều đã đạt.
 - `source-map-js` là dependency bắc cầu qua Vite/PostCSS, đã lên 1.2.2; `npm audit --audit-level=high` ngày 2026-10-09 báo 0 vulnerability.
-- SMTP hiện đồng bộ trong request transaction, có thể tạo timing side-channel và giữ database lock khi gọi mạng.
-- Cooldown theo user chưa thay thế rate limit theo IP/identity cho endpoint public.
+- Không còn điểm gọi SMTP trực tiếp trong các producer password reset, assignment hoặc extension. Delivery thật đã được xác nhận bằng diễn tập tắt/bật Mailpit PRD-409.
+- Timing guard giữ request reset hợp lệ trong cửa sổ mặc định 150-175 ms. Kết quả local đạt nhưng phải đo lại trên hạ tầng deploy nếu latency database thường xuyên vượt 150 ms; shared rate limit không được tắt để dựa riêng vào jitter.
+- SMTP thuần không có exactly-once delivery tuyệt đối; worker giữ stable Message-ID và chuyển lease mơ hồ sang `UNKNOWN` thay vì retry mù. PRD-409 chỉ xác nhận kịch bản lỗi kết nối/recovery đã chạy không tạo thư trùng.
+- Resend API giảm phụ thuộc SMTP cloud nhưng vẫn không tạo cam kết exactly-once tuyệt đối. Demo bắt buộc recipient allow-list và mặc định chỉ gửi tới đúng email chủ tài khoản đã xác nhận; onboarding email không thay thế kiểm tra email từ ứng dụng sau deploy.
 
 ## Việc tiếp theo
 
-1. Hướng dẫn người dùng chạy demo PRD-306 và chỉ đánh dấu hoàn thành sau khi có xác nhận thật.
-2. Sau khi chốt Giai đoạn 3, chuẩn bị ADR cho email job/outbox của PRD-401; chưa tạo migration trước khi người dùng duyệt PRD-402.
-3. Trước public production, hoàn tất PR-207/208/209 trong password-reset `tasks.md`; không tuyên bố production-ready chỉ từ Gate G1-G3.
+1. Review toàn bộ working tree, commit và push source; hiện branch `feature/frontend-prd603` vẫn chưa có commit riêng nên Render chưa thể thấy bất kỳ thay đổi mới nào.
+2. Người dùng làm PRD-601/606 theo đúng thứ tự runbook: tạo Render Static Site bằng placeholder để có frontend origin, tạo Render Web Service bằng Docker với secret store, duyệt migration, cập nhật frontend sang backend URL, cấu hình GitHub environment `demo`, rồi mới đặt `DEMO_DEPLOY_ENABLED=true`. Không gửi secret qua chat/repository, không reset Aiven hoặc xóa database cũ.
+3. Người dùng làm PRD-607/608: tạo backup, restore vào database rỗng `device_demo_restore_*`, kiểm tra dữ liệu/login; sau đó browser/email cloud smoke. PRD-609 tích hợp bằng chứng deploy/restore/rollback. Gate G6 chỉ đóng sau các lần chạy thật.
 
 ## Cảnh báo vận hành
 
+- Demo image dùng C1 JIT ưu tiên startup, có thể giảm peak throughput. Phép thử local hard cap 0,1 CPU cần 425 giây đến readiness; không suy ra cold-start Render từ số này. Khi deploy thật cần grace phù hợp, kiểm tra wake-up/readiness và mở sẵn trước trình diễn.
 - Không lưu mật khẩu hoặc reset token dạng rõ trong repository/log/response.
+- Rate-limit bucket không lưu email/IP rõ. Deployment sau reverse proxy phải giới hạn backend sau proxy tin cậy; ứng dụng dùng `server.forward-headers-strategy=native` để lấy client IP.
+- Password-reset response window mặc định 150 ms + jitter 0-25 ms chỉ che chênh lệch đã đo khi latency nghiệp vụ nằm dưới floor; phải benchmark lại trên môi trường deploy và không tắt shared rate limit.
+- Local/Compose/IDE cần thêm `LOCAL_EMAIL_JOB_SECRET_KEY` là đúng 32 byte mã hóa Base64, độc lập với JWT; có thể tạo bằng `openssl rand -base64 32`. Không xóa key version cũ khi còn job dùng nó.
 - Từ 2026-10-08, `DeviceApplicationTests` được ép dùng MySQL Testcontainers (`jdbc:tc`) và `scripts/verify.sh integration` bỏ biến DB môi trường, yêu cầu Docker trước khi chạy. Không đổi test sang Aiven/production khi Docker không có.
 - Dùng `bash scripts/verify.sh safe` làm cổng mặc định; script không chạy test cần datasource thật.
 - Nếu Mockito không tự attach được trong sandbox, dùng cách Byte Buddy javaagent đã ghi trong `verification.md`.
